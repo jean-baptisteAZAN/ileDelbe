@@ -51,12 +51,13 @@ private struct AlertPulse: View {
         HStack(spacing: 0) {
             Image(systemName: "bell.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .frame(width: NotchGeometry.closedActiveWing)
+                .frame(width: NotchGeometry.alertWing)
             Spacer(minLength: 0)
             Text("Minuteur terminé")
-                .font(.system(size: 9, weight: .semibold))
-                .lineLimit(2).multilineTextAlignment(.center)
-                .frame(width: NotchGeometry.closedActiveWing)
+                .font(.system(size: 11, weight: .semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .frame(width: NotchGeometry.alertWing)
         }
         .foregroundStyle(Color.timerOrange)
         .opacity(dim ? 0.35 : 1)

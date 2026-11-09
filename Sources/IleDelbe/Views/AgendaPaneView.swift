@@ -25,7 +25,9 @@ struct AgendaPaneView: View {
                     capsuleButton("Ouvrir les Réglages", action: onOpenSettings)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .notDetermined, .granted:
+            case .notDetermined:
+                Color.clear.frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .granted:
                 if events.isEmpty {
                     Text("Aucun événement dans les prochaines 24 h")
                         .font(.system(size: 13)).foregroundStyle(.secondary)
