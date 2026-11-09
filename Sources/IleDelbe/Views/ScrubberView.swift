@@ -6,6 +6,7 @@ import SwiftUI
 struct ScrubberView: View {
     var info: NowPlayingInfo
     var isOpen: Bool
+    var fill: Color = .white
     var onSeek: (TimeInterval) -> Void
 
     @State private var dragValue: Double?
@@ -46,7 +47,7 @@ struct ScrubberView: View {
                     }
                 )
                 .controlSize(.mini)
-                .tint(.white)
+                .tint(fill)
                 timeLabel(duration)
             }
         } else {

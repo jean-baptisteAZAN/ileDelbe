@@ -57,7 +57,8 @@ struct NotchRootView: View {
             .padding(.bottom, 14)
             .transition(.opacity)
         } else if isPlaying {
-            ClosedActivityView(artworkData: info?.artworkData, isPlaying: true)
+            ClosedActivityView(layout: .media, artworkData: info?.artworkData, isPlaying: true,
+                               timer: CountdownTimer(), now: .now, glow: nil)
                 .frame(height: g.notch.height)
                 .transition(.opacity)
         }
@@ -74,7 +75,8 @@ private extension NowPlayingInfo {
 }
 
 #Preview("Closed playing") {
-    ClosedActivityView(artworkData: nil, isPlaying: true)
+    ClosedActivityView(layout: .media, artworkData: nil, isPlaying: true,
+                       timer: CountdownTimer(), now: .now, glow: Color(red: 0.9, green: 0.3, blue: 0.5))
         .frame(width: 220, height: 32)
         .background(NotchShape(bottomRadius: 10).fill(.black))
         .padding()
