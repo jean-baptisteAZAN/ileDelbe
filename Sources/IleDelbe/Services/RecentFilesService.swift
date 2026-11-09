@@ -54,7 +54,7 @@ final class RecentFilesService {
                                          isDirectory: tree.contains("public.folder")))
         }
         let selected = RecentFiles.select(candidates, home: home)
-        log.debug("recent files: \(candidates.count) candidates, \(selected.map(\.name).joined(separator: ", "), privacy: .public)")
+        log.debug("recent files: \(candidates.count) candidates, \(selected.count) selected")
         if selected != files { files = selected }
     }
 }

@@ -14,6 +14,8 @@ final class CalendarService {
     private(set) var upcoming: [AgendaEvent] = []
     private(set) var infoLine: String?
 
+    private static let fallbackRefresh: TimeInterval = 3 * 3600
+
     @ObservationIgnored private let store = EKEventStore()
     @ObservationIgnored private let log = Logger(subsystem: "io.github.ileDelbe", category: "calendar")
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
@@ -80,8 +82,8 @@ final class CalendarService {
         let predicate = store.predicateForEvents(withStart: now, end: now.addingTimeInterval(Agenda.window), calendars: nil)
         let events = store.events(matching: predicate).map(Self.map)
         upcoming = Agenda.upcoming(events, now: now)
-        infoLine = Agenda.infoLine(upcoming, now: now)
-        log.info("calendar refresh: \(self.upcoming.count) event(s), info line: \(self.infoLine ?? "none")")
+        infoLine = Agenda.infoLine(Agenda.filtered(events, now: now), now: now)
+        log.info("calendar refresh: \(self.upcoming.count) event(s), info line: \(self.infoLine == nil ? "none" : "shown")")
         schedule(now: now)
     }
 
@@ -99,6 +101,8 @@ final class CalendarService {
             }
         }
         if let end = upcoming.map(\.end).min() { candidates.append(end) }
+        // Coarse fallback so an empty window is still re-checked (no polling beyond this one-shot).
+        candidates.append(now.addingTimeInterval(Self.fallbackRefresh))
         guard let fire = candidates.filter({ $0 > now }).min() else { return }
         let item = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated { self?.refresh() }

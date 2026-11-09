@@ -37,6 +37,26 @@ import Testing
         #expect(Agenda.infoLine(events, now: now) == "Revue dans 10 min")
     }
 
+    @Test func imminentMeetingSurvivesTwoInProgressEvents() {
+        let events = [
+            ev("cur1", start: -900, dur: 3600), ev("cur2", start: -600, dur: 3600),
+            ev("soon", start: 300, title: "Standup"),
+        ]
+        let filtered = Agenda.filtered(events, now: now)
+        #expect(Agenda.infoLine(filtered, now: now) == "Standup dans 5 min")
+        let upcoming = Agenda.upcoming(events, now: now)
+        #expect(upcoming.map(\.id) == ["cur1", "soon"])
+    }
+
+    @Test func newMeetingLinkForms() {
+        let t = "https://teams.microsoft.com/meet/123456789012?p=AbC123"
+        #expect(MeetingLink.find(in: ["x " + t]) == URL(string: t))
+        let my = "https://acme.zoom.us/my/john.doe"
+        #expect(MeetingLink.find(in: [my]) == URL(string: my))
+        let wc = "https://acme.zoom.us/wc/join/987654321"
+        #expect(MeetingLink.find(in: [wc]) == URL(string: wc))
+    }
+
     @Test func meetingLinks() {
         #expect(MeetingLink.find(in: ["Lien : https://meet.google.com/abc-defg-hij merci"])
             == URL(string: "https://meet.google.com/abc-defg-hij"))

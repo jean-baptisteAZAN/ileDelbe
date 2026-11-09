@@ -143,7 +143,6 @@ final class NotchWindowController {
             if inTrigger { pointerInBubble = inBubble }
         }
         if model.isDraggingFile { inTrigger = true }  // keep the panel open while dragging a file out
-        if case .unavailable = nowPlaying.status { inTrigger = false }  // adapter down: show nothing
         let now = ProcessInfo.processInfo.systemUptime
         hover.update(inTrigger: inTrigger, now: now)
         apply()

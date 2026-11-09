@@ -58,10 +58,15 @@ import Foundation
     @Test func sleepWake() {
         var t = CountdownTimer()
         t.start(duration: 300, now: T)
-        #expect(t.tick(now: T + 4000) == true)
-        #expect(t.state == .ringing(since: T + 300))
+        // Expired long ago (after sleep): silently idle, no ring.
         #expect(t.tick(now: T + 4000) == false)
         #expect(t.state == .idle)
+    }
+    @Test func recentlyExpiredStillRings() {
+        var t = CountdownTimer()
+        t.start(duration: 300, now: T)
+        #expect(t.tick(now: T + 300 + 59) == true)
+        #expect(t.state == .ringing(since: T + 300))
     }
     @Test func restoreAfterLaunch() {
         var t = CountdownTimer()

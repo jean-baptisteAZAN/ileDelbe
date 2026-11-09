@@ -11,7 +11,7 @@ final class HaloService {
 
     @ObservationIgnored private let nowPlaying: NowPlayingService
     @ObservationIgnored private var currentArtwork: Data?
-    @ObservationIgnored private var cache: (hash: Int, glow: Color?)?
+    @ObservationIgnored private var cache: (artwork: Data, glow: Color?)?
     @ObservationIgnored private var task: Task<Void, Never>?
 
     private nonisolated static let context = CIContext(options: [.workingColorSpace: NSNull()])
@@ -36,8 +36,7 @@ final class HaloService {
         task?.cancel()
         task = nil
         guard let artwork else { glow = nil; return }
-        let hash = artwork.hashValue
-        if let cache, cache.hash == hash {
+        if let cache, cache.artwork == artwork {
             glow = cache.glow
             return
         }
@@ -45,7 +44,7 @@ final class HaloService {
         task = Task { [weak self] in
             let result = await Task.detached(priority: .utility) { Self.computeGlow(from: artwork) }.value
             guard let self, !Task.isCancelled, self.currentArtwork == artwork else { return } // stale
-            self.cache = (hash, result)
+            self.cache = (artwork, result)
             self.glow = result
         }
     }

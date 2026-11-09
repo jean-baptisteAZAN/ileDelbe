@@ -58,11 +58,15 @@ final class TimerService {
     }
 
     private func updateTicker() {
-        let needed = timer.isActive || timer.isRinging
+        let needed: Bool = switch timer.state {
+        case .running, .ringing: true
+        default: false
+        }
         if needed, ticker == nil {
             let t = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
                 MainActor.assumeIsolated { self?.tick() }
             }
+            t.tolerance = 0.1
             RunLoop.main.add(t, forMode: .common)
             ticker = t
         } else if !needed, let t = ticker {

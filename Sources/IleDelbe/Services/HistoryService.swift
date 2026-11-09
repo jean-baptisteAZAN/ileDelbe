@@ -37,6 +37,10 @@ final class HistoryService {
     private func handle(_ info: NowPlayingInfo?) {
         guard let info, info.isPlaying else { return }
         let before = history
+        let first = history.entries.first
+        let isCurrent = first?.title == info.title && first?.artist == info.artist
+        // Decode/encode artwork only when a record would insert, or the current entry lacks a thumbnail.
+        guard !isCurrent || first?.thumbnail == nil else { return }
         let thumbnail = info.artworkData.flatMap(Self.thumbnail(from:))
         history.record(title: info.title, artist: info.artist, thumbnail: thumbnail, at: Date())
         if let thumbnail {

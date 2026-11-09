@@ -50,6 +50,9 @@ public struct CountdownTimer: Equatable, Codable, Sendable {
     @discardableResult
     public mutating func tick(now: Date) -> Bool {
         switch state {
+        case let .running(end, _) where now.timeIntervalSince(end) > Self.ringingAutoClear:
+            state = .idle  // expired long ago (e.g. after sleep): no ring
+            return false
         case let .running(end, _) where now >= end:
             state = .ringing(since: end)
             return true
