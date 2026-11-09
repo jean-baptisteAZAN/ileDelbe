@@ -19,8 +19,9 @@ struct NowPlayingServiceTests {
 
     @Test func decodesStreamLines() async throws {
         let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.spotify.client","title":"Song","playing":true}}"#
-        let (paths, _) = try makeScript("echo '\(line)'\nsleep 5\n")
+        let (paths, dir) = try makeScript("echo '\(line)'\nsleep 5\n")
         let s = NowPlayingService(executable: URL(fileURLWithPath: "/bin/sh"), paths: paths)
+        defer { try? FileManager.default.removeItem(at: dir) }
         s.start()
         try await wait(2) { s.info?.title == "Song" }
         #expect(s.info?.title == "Song")
@@ -33,12 +34,26 @@ struct NowPlayingServiceTests {
     @Test func failureIsUnavailableAndNotRelaunched() async throws {
         let (paths, dir) = try makeScript("echo run >> \"$(dirname \"$0\")/count\"\nexit 3\n")
         let s = NowPlayingService(executable: URL(fileURLWithPath: "/bin/sh"), paths: paths)
+        defer { try? FileManager.default.removeItem(at: dir) }
         s.start()
         try await wait(2) { if case .unavailable = s.status { true } else { false } }
-        guard case .unavailable = s.status else { Issue.record("status \(s.status)"); return }
+        #expect(s.status == .unavailable("exit 3"))
         try await Task.sleep(for: .seconds(1))
         let count = try String(contentsOf: dir.appendingPathComponent("count"), encoding: .utf8)
         #expect(count.split(separator: "\n").count == 1)
+    }
+
+    @Test func infoClearedWhenAdapterDies() async throws {
+        let line = #"{"type":"data","diff":false,"payload":{"bundleIdentifier":"com.spotify.client","title":"Song","playing":true}}"#
+        let (paths, dir) = try makeScript("echo '\(line)'\nsleep 0.3\nexit 3\n")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let s = NowPlayingService(executable: URL(fileURLWithPath: "/bin/sh"), paths: paths)
+        s.start()
+        try await wait(2) { s.info?.title == "Song" }
+        #expect(s.info?.title == "Song")
+        try await wait(3) { s.status == .unavailable("exit 3") }
+        #expect(s.status == .unavailable("exit 3"))
+        #expect(s.info == nil)
     }
 
     @Test func nilPathsIsUnavailable() {

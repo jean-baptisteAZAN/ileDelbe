@@ -66,16 +66,14 @@ public final class NowPlayingService {
             group.enter()
             DispatchQueue.global(qos: .utility).async {
                 while true {
-                    let d = errHandle.availableData
-                    if d.isEmpty { break }
+                    guard let d = Self.readChunk(errHandle), !d.isEmpty else { break }
                     errBox.append(d)
                 }
                 group.leave()
             }
             var buffer = LineBuffer()
             while true {
-                let d = outHandle.availableData
-                if d.isEmpty { break }
+                guard let d = Self.readChunk(outHandle), !d.isEmpty else { break }
                 for line in buffer.append(d) { continuation.yield(.line(line)) }
             }
             group.wait()
@@ -95,6 +93,19 @@ public final class NowPlayingService {
                     self.handleTermination(code: code, stderr: stderr)
                 }
             }
+        }
+    }
+
+    /// Returns whatever bytes are available (blocking for at least one); nil on EOF or error.
+    /// Uses read(2) directly: FileHandle.availableData raises on error, and
+    /// read(upToCount:) blocks until the count is full.
+    nonisolated private static func readChunk(_ handle: FileHandle) -> Data? {
+        var buf = [UInt8](repeating: 0, count: 65536)
+        while true {
+            let n = buf.withUnsafeMutableBytes { read(handle.fileDescriptor, $0.baseAddress, $0.count) }
+            if n > 0 { return Data(buf[0..<n]) }
+            if n < 0 && errno == EINTR { continue }
+            return nil
         }
     }
 
@@ -119,6 +130,8 @@ public final class NowPlayingService {
 
     private func handleTermination(code: Int32, stderr: String) {
         process = nil
+        info = nil
+        decoder = AdapterStreamDecoder()
         if stoppedByUs || code == 0 {
             status = .idle
         } else {
@@ -132,6 +145,10 @@ public final class NowPlayingService {
 private final class LockedData: @unchecked Sendable {
     private let lock = NSLock()
     private var data = Data()
-    func append(_ d: Data) { lock.lock(); data.append(d); lock.unlock() }
+    func append(_ d: Data) {
+        lock.lock(); defer { lock.unlock() }
+        data.append(d)
+        if data.count > 4096 { data = Data(data.suffix(4096)) }
+    }
     var string: String { lock.lock(); defer { lock.unlock() }; return String(decoding: data, as: UTF8.self) }
 }
