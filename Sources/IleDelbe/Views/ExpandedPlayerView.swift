@@ -11,6 +11,8 @@ struct ExpandedPlayerView: View {
     var onCommand: (AdapterCommand) -> Void
     var onVolume: (Float) -> Void
 
+    @Environment(\.isStaticSnapshot) private var isStaticSnapshot
+
     var body: some View {
         if let info {
             VStack(spacing: 10) {
@@ -65,13 +67,17 @@ struct ExpandedPlayerView: View {
     private var volumeRow: some View {
         HStack(spacing: 8) {
             Image(systemName: "speaker.fill")
-            Slider(
-                value: Binding(get: { Double(volume) }, set: { onVolume(Float($0)) }),
-                in: 0...1
-            )
-            .controlSize(.mini)
-            .tint(.white)
-            .disabled(!isVolumeSettable)
+            if isStaticSnapshot {
+                SnapshotSlider(fraction: Double(volume), tint: .white)
+            } else {
+                Slider(
+                    value: Binding(get: { Double(volume) }, set: { onVolume(Float($0)) }),
+                    in: 0...1
+                )
+                .controlSize(.mini)
+                .tint(.white)
+                .disabled(!isVolumeSettable)
+            }
             Image(systemName: "speaker.wave.3.fill")
         }
         .font(.system(size: 10))

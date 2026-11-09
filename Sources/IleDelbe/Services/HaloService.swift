@@ -49,7 +49,7 @@ final class HaloService {
         }
     }
 
-    private nonisolated static func computeGlow(from data: Data) -> Color? {
+    nonisolated static func computeGlow(from data: Data) -> Color? {
         guard let image = CIImage(data: data), !image.extent.isEmpty, !image.extent.isInfinite else { return nil }
         let filter = CIFilter.areaAverage()
         filter.inputImage = image
