@@ -30,9 +30,9 @@ public enum Agenda {
     }
 
     public static func infoLine(_ upcoming: [AgendaEvent], now: Date) -> String? {
-        guard let first = upcoming.first else { return nil }
+        guard let first = upcoming.first(where: { $0.start > now }) else { return nil }
         let delta = first.start.timeIntervalSince(now)
-        guard delta > 0, delta <= soonThreshold else { return nil }
+        guard delta <= soonThreshold else { return nil }
         let minutes = max(1, Int((delta / 60).rounded(.up)))
         return "\(first.title) dans \(minutes) min"
     }

@@ -32,6 +32,11 @@ import Testing
         #expect(Agenda.infoLine([ev("a", start: -60)], now: now) == nil)
     }
 
+    @Test func infoLineSkipsInProgressEvent() {
+        let events = [ev("cur", start: -600, dur: 1800), ev("next", start: 600, title: "Revue")]
+        #expect(Agenda.infoLine(events, now: now) == "Revue dans 10 min")
+    }
+
     @Test func meetingLinks() {
         #expect(MeetingLink.find(in: ["Lien : https://meet.google.com/abc-defg-hij merci"])
             == URL(string: "https://meet.google.com/abc-defg-hij"))
