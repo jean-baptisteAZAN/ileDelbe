@@ -14,6 +14,7 @@ struct ScrubberView: View {
     /// so the thumb does not snap back to the stale position.
     @State private var heldValue: Double?
     @State private var holdToken = 0
+    @Environment(\.isStaticSnapshot) private var isStaticSnapshot
 
     var body: some View {
         Group {
@@ -35,19 +36,11 @@ struct ScrubberView: View {
             let shown = dragValue ?? heldValue ?? min(elapsed, duration)
             HStack(spacing: 8) {
                 timeLabel(shown)
-                Slider(
-                    value: Binding(get: { shown }, set: { dragValue = $0 }),
-                    in: 0...duration,
-                    onEditingChanged: { editing in
-                        if !editing, let value = dragValue {
-                            onSeek(value)
-                            hold(value)
-                            dragValue = nil
-                        }
-                    }
-                )
-                .controlSize(.mini)
-                .tint(fill)
+                if isStaticSnapshot {
+                    SnapshotSlider(fraction: duration > 0 ? shown / duration : 0, tint: fill)
+                } else {
+                    slider(shown: shown, duration: duration)
+                }
                 timeLabel(duration)
             }
         } else {
@@ -56,6 +49,22 @@ struct ScrubberView: View {
                 Spacer(minLength: 0)
             }
         }
+    }
+
+    private func slider(shown: Double, duration: TimeInterval) -> some View {
+        Slider(
+            value: Binding(get: { shown }, set: { dragValue = $0 }),
+            in: 0...duration,
+            onEditingChanged: { editing in
+                if !editing, let value = dragValue {
+                    onSeek(value)
+                    hold(value)
+                    dragValue = nil
+                }
+            }
+        )
+        .controlSize(.mini)
+        .tint(fill)
     }
 
     private func hold(_ value: Double) {

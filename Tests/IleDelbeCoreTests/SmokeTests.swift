@@ -1,4 +1,4 @@
 import Testing
 @testable import IleDelbeCore
 
-@Test func coreLinks() { #expect(IleDelbeCore.version == "0.1.0") }
+@Test func coreLinks() { #expect(IleDelbeCore.version == "0.2.0") }
