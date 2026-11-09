@@ -28,6 +28,12 @@ public struct ListeningHistory: Equatable, Codable, Sendable {
         if entries.count > Self.maxEntries { entries.removeLast(entries.count - Self.maxEntries) }
     }
 
+    /// Artwork often arrives after title metadata: fills entries[0].thumbnail if title+artist match and it is nil.
+    public mutating func setThumbnailIfMissing(title: String, artist: String?, thumbnail: Data) {
+        guard let first = entries.first, first.title == title, first.artist == artist, first.thumbnail == nil else { return }
+        entries[0] = ListeningEntry(title: first.title, artist: first.artist, startedAt: first.startedAt, thumbnail: thumbnail)
+    }
+
     /// Newest first, skipping an entry matching `current` (title+artist), at most `limit`.
     public func recent(excluding current: NowPlayingInfo?, limit: Int = 3) -> [ListeningEntry] {
         let filtered = entries.filter { e in

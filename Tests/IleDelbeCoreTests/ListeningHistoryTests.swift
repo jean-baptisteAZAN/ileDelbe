@@ -44,4 +44,16 @@ import Foundation
         let d = try JSONEncoder().encode(h)
         #expect(try JSONDecoder().decode(ListeningHistory.self, from: d) == h)
     }
+    @Test func setThumbnailIfMissing() {
+        let d = Data([1, 2, 3])
+        var h = ListeningHistory()
+        h.record(title: "A", artist: "X", thumbnail: nil, at: T)
+        h.setThumbnailIfMissing(title: "B", artist: "X", thumbnail: d)
+        h.setThumbnailIfMissing(title: "A", artist: "Y", thumbnail: d)
+        #expect(h.entries[0].thumbnail == nil)
+        h.setThumbnailIfMissing(title: "A", artist: "X", thumbnail: d)
+        #expect(h.entries[0].thumbnail == d)
+        h.setThumbnailIfMissing(title: "A", artist: "X", thumbnail: Data([9]))
+        #expect(h.entries[0].thumbnail == d)
+    }
 }
