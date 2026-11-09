@@ -7,6 +7,7 @@ struct ExpandedPlayerView: View {
     var isOpen: Bool
     var volume: Float
     var isVolumeSettable: Bool
+    var glow: Color? = nil
     var onCommand: (AdapterCommand) -> Void
     var onVolume: (Float) -> Void
 
@@ -15,6 +16,7 @@ struct ExpandedPlayerView: View {
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
                     ArtworkView(data: info.artworkData, size: 64, cornerRadius: 10)
+                        .shadow(color: glow?.opacity(0.8) ?? .clear, radius: 35, y: 13)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(info.title)
                             .font(.system(size: 14, weight: .bold))
@@ -30,7 +32,7 @@ struct ExpandedPlayerView: View {
                     Spacer(minLength: 0)
                     controls(isPlaying: info.isPlaying)
                 }
-                ScrubberView(info: info, isOpen: isOpen) { onCommand(.seek(to: $0)) }
+                ScrubberView(info: info, isOpen: isOpen, fill: glow ?? .white) { onCommand(.seek(to: $0)) }
                 volumeRow
             }
         } else {

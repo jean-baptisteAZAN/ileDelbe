@@ -19,13 +19,24 @@ import Testing
         #expect(make()?.closedActive == CGRect(x: 626, y: 950, width: 260, height: 32))
     }
 
+    @Test func closedAlertRect() {
+        let g = make()
+        #expect(g?.closedAlert == CGRect(x: 552, y: 950, width: 408, height: 32))
+        #expect(g.map { $0.expanded.contains($0.closedAlert) } == true)
+    }
+
     @Test func expandedRect() {
-        #expect(make()?.expanded == CGRect(x: 536, y: 812, width: 440, height: 170))
+        #expect(make()?.expanded == CGRect(x: 482, y: 746, width: 548, height: 236))
+    }
+
+    @Test func bubbleRect() {
+        #expect(make()?.bubble == CGRect(x: 894, y: 950, width: 76, height: 32))
+        #expect(make()?.expanded.contains(make()!.bubble) == true)
     }
 
     @Test func nonZeroOrigin() {
         #expect(make(originX: 1512)?.notch == CGRect(x: 2174, y: 950, width: 188, height: 32))
-        #expect(make(originX: 1512)?.expanded == CGRect(x: 2048, y: 812, width: 440, height: 170))
+        #expect(make(originX: 1512)?.expanded == CGRect(x: 1994, y: 746, width: 548, height: 236))
     }
 
     @Test func noNotch() {

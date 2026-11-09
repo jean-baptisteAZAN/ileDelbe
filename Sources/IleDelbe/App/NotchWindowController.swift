@@ -13,6 +13,8 @@ final class NotchWindowController {
     private var deadlineWork: DispatchWorkItem?
     private var monitors: [Any] = []
     private var screenObserver: NSObjectProtocol?
+    /// Whether the pointer was last seen inside the bubble rect while closed (open → Minuteur tab).
+    private var pointerInBubble = false
 
     init(model: NotchViewModel) {
         self.model = model
@@ -36,6 +38,20 @@ final class NotchWindowController {
         }) {
             monitors.append(local)
         }
+        // End of a file drag out of the panel: drop the "keep open" override.
+        let mouseUp: (NSEvent) -> Void = { [weak self] _ in
+            MainActor.assumeIsolated { self?.endFileDrag() }
+        }
+        if let global = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp, handler: mouseUp) {
+            monitors.append(global)
+        }
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp, handler: { event in
+            mouseUp(event)
+            return event
+        }) {
+            monitors.append(local)
+        }
+        observeClosedLayout()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -59,7 +75,13 @@ final class NotchWindowController {
         model.geometry = geometry
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
-        panel.setFrame(NSIntegralRect(geometry.expanded), display: true)
+        let e = geometry.expanded
+        // The window extends past `expanded` only so the open halo is not cut by the window edge.
+        // That margin never takes clicks: see `updateMousePassThrough`.
+        let m = HaloStyle.windowMargin
+        let frame = CGRect(x: e.minX - m.horizontal, y: e.minY - m.bottom,
+                           width: e.width + 2 * m.horizontal, height: e.height + m.bottom)
+        panel.setFrame(NSIntegralRect(frame), display: true)
         panel.orderFrontRegardless()
         log.info("panel frame \(NSStringFromRect(self.panel.frame), privacy: .public) notch \(NSStringFromRect(geometry.notch), privacy: .public)")
         evaluateHover()
@@ -82,22 +104,49 @@ final class NotchWindowController {
 
     // MARK: Hover
 
+    /// Re-arms itself on every change, so the trigger rect follows the bubble / alert width.
+    private func observeClosedLayout() {
+        _ = withObservationTracking {
+            model.closedLayout
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.observeClosedLayout()
+                self?.evaluateHover()
+            }
+        }
+    }
+
+    private func endFileDrag() {
+        guard model.isDraggingFile else { return }
+        model.isDraggingFile = false
+        evaluateHover()
+    }
+
     private func evaluateHover() {
         guard let geometry = model.geometry else { return }
         let nowPlaying = model.nowPlaying
-        let trigger: CGRect
+        let mouse = NSEvent.mouseLocation
+        // Safety net: a drag session can swallow the mouse-up; a move with the button up ends it.
+        if model.isDraggingFile, NSEvent.pressedMouseButtons & 1 == 0 { model.isDraggingFile = false }
+        var inTrigger: Bool
         if hover.isOpen {
-            trigger = geometry.expanded
-        } else if nowPlaying.info?.isPlaying == true {
-            trigger = geometry.closedActive  // the visible pill while playing
+            inTrigger = Self.contains(geometry.expanded, mouse)
         } else {
-            trigger = geometry.notch
+            let layout = model.closedLayout
+            let main: CGRect = switch layout {
+            case .plain: geometry.notch
+            case .media, .mediaAndBubble, .timer: geometry.closedActive  // the visible pill
+            case .alert: geometry.closedAlert
+            }
+            let inBubble = layout == .mediaAndBubble && Self.contains(geometry.bubble, mouse)
+            inTrigger = Self.contains(main, mouse) || inBubble
+            if inTrigger { pointerInBubble = inBubble }
         }
-        var inTrigger = Self.contains(trigger, NSEvent.mouseLocation)
-        if case .unavailable = nowPlaying.status { inTrigger = false }  // adapter down: show nothing
+        if model.isDraggingFile { inTrigger = true }  // keep the panel open while dragging a file out
         let now = ProcessInfo.processInfo.systemUptime
         hover.update(inTrigger: inTrigger, now: now)
         apply()
+        updateMousePassThrough(inExpanded: Self.contains(geometry.expanded, mouse))
 
         deadlineWork?.cancel()
         deadlineWork = nil
@@ -113,9 +162,20 @@ final class NotchWindowController {
 
     private func apply() {
         guard model.isOpen != hover.isOpen else { return }
+        if hover.isOpen { model.panelWillOpen(fromBubble: pointerInBubble) }
         model.isOpen = hover.isOpen
-        // Closed: never intercept clicks (menu bar stays usable).
-        panel.ignoresMouseEvents = !hover.isOpen
+        if !hover.isOpen { model.panelDidClose() }
+    }
+
+    /// Clicks reach the panel only while it is open and the pointer is over the panel itself
+    /// (or a file drag is in progress). Closed (bubble included), and in the transparent glow
+    /// margin around the open panel, clicks pass through to the menu bar and apps below.
+    /// Updated on every mouse move.
+    private func updateMousePassThrough(inExpanded: Bool) {
+        let ignores = !((hover.isOpen && inExpanded) || model.isDraggingFile)
+        guard panel.ignoresMouseEvents != ignores else { return }
+        panel.ignoresMouseEvents = ignores
+        log.info("ignoresMouseEvents=\(ignores, privacy: .public)")
     }
 
     /// Inclusive of the max edges: the pointer pinned at the very top of the screen has y == maxY.

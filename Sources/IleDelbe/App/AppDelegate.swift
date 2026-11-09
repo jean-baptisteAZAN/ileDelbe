@@ -21,7 +21,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nowPlaying.start()
         self.nowPlaying = nowPlaying
 
-        let model = NotchViewModel(nowPlaying: nowPlaying, volume: VolumeService())
+        let model = NotchViewModel(
+            nowPlaying: nowPlaying,
+            volume: VolumeService(),
+            timer: TimerService(),
+            history: HistoryService(nowPlaying: nowPlaying),
+            halo: HaloService(nowPlaying: nowPlaying),
+            calendar: CalendarService(),
+            files: RecentFilesService())
         controller = NotchWindowController(model: model)
     }
 
