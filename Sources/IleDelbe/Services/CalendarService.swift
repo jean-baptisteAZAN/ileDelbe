@@ -16,7 +16,7 @@ final class CalendarService {
 
     @ObservationIgnored private let store = EKEventStore()
     @ObservationIgnored private let log = Logger(subsystem: "io.github.ileDelbe", category: "calendar")
-    @ObservationIgnored private var observer: NSObjectProtocol?
+    @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var scheduled: DispatchWorkItem?
 
     init() {
@@ -55,12 +55,15 @@ final class CalendarService {
     }
 
     private func start() {
-        if observer == nil {
-            observer = NotificationCenter.default.addObserver(
-                forName: .EKEventStoreChanged, object: store, queue: .main
-            ) { [weak self] _ in
+        if observers.isEmpty {
+            let hop: @Sendable (Notification) -> Void = { [weak self] _ in
                 MainActor.assumeIsolated { self?.refresh() }
             }
+            observers = [
+                NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main, using: hop),
+                NotificationCenter.default.addObserver(forName: .NSSystemClockDidChange, object: nil, queue: .main, using: hop),
+                NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main, using: hop),
+            ]
         }
         refresh()
     }
@@ -95,7 +98,7 @@ final class CalendarService {
                 candidates.append(next.start.addingTimeInterval(-Agenda.soonThreshold))
             }
         }
-        if let first = upcoming.first { candidates.append(first.end) }
+        if let end = upcoming.map(\.end).min() { candidates.append(end) }
         guard let fire = candidates.filter({ $0 > now }).min() else { return }
         let item = DispatchWorkItem { [weak self] in
             MainActor.assumeIsolated { self?.refresh() }
@@ -105,9 +108,10 @@ final class CalendarService {
     }
 
     private nonisolated static func map(_ e: EKEvent) -> AgendaEvent {
-        AgendaEvent(
-            id: e.eventIdentifier ?? "\(e.title ?? "")-\(e.startDate.timeIntervalSince1970)",
-            title: e.title ?? "",
+        let title = (e.title?.isEmpty == false) ? e.title! : "Sans titre"
+        return AgendaEvent(
+            id: "\(e.eventIdentifier ?? title)-\(e.startDate.timeIntervalSince1970)",
+            title: title,
             start: e.startDate, end: e.endDate, isAllDay: e.isAllDay,
             colorHex: e.calendar.flatMap { hex($0.cgColor) },
             meetingURL: MeetingLink.find(in: [e.url?.absoluteString, e.location, e.notes]))
