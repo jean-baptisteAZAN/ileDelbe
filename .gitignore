@@ -2,3 +2,7 @@
 build/
 Vendor/mediaremote-adapter/build/
 .DS_Store
+.swiftpm/
+xcuserdata/
+DerivedData/
+*.xcuserstate
