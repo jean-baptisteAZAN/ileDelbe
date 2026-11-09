@@ -37,13 +37,15 @@
 **Files:**
 - Create: `Package.swift`, `Sources/IleDelbeCore/IleDelbeCore.swift`, `Sources/IleDelbe/main.swift`, `Tests/IleDelbeCoreTests/SmokeTests.swift`
 - Create: `Resources/Info.plist`, `scripts/build-adapter.sh`, `scripts/bundle-app.sh`, `Makefile`
-- Create: `.gitignore` (`.build/`, `build/`, `Vendor/mediaremote-adapter/build/`, `.DS_Store`), `LICENSE` (MIT, "Copyright (c) 2026 Jean-Baptiste Azan"), `README.md` (one paragraph + build commands + credit to mediaremote-adapter)
+- Create: `.gitignore` (`.build/`, `build/`, `Vendor/mediaremote-adapter/build/`, `.DS_Store`), `LICENSE` (MIT, "Copyright (c) 2026 Jean-Baptiste Azan")
+- Modify: `Readme.md` (already exists, keep this exact filename — FS is case-insensitive; replace "## Hello" with one paragraph + build commands + credit to mediaremote-adapter)
+- Git repo already initialized, remote `origin` = `git@github.com:jean-baptisteAZAN/ileDelbe.git` (public), spec + plan already committed on `main`.
 - Submodule: `Vendor/mediaremote-adapter` → `https://github.com/ungive/mediaremote-adapter`
 
 **Interfaces:**
 - Produces: `make test` (runs `swift test`), `make app` (builds `build/IleDelbe.app`), `make run` (app + `open build/IleDelbe.app`). Bundle layout: `Contents/MacOS/IleDelbe`, `Contents/Info.plist`, `Contents/Resources/mediaremote-adapter.pl`, `Contents/Resources/MediaRemoteAdapter.framework`.
 
-- [ ] **Step 1:** `git init`, add `.gitignore`, commit existing `docs/` with message `docs: add v1 spec and plan`.
+- [ ] **Step 1:** Add `.gitignore` and `LICENSE` (repo already exists).
 - [ ] **Step 2:** `Package.swift`: tools 6.0, `platforms: [.macOS(.v15)]`, library target `IleDelbeCore`, executable target `IleDelbe` depending on it, test target `IleDelbeCoreTests`. `main.swift` prints `"ileDelbe"` for now.
 - [ ] **Step 3:** Smoke test `@Test func coreLinks() { #expect(IleDelbeCore.version == "0.1.0") }` with `public enum IleDelbeCore { public static let version = "0.1.0" }`. Run `swift test` → PASS.
 - [ ] **Step 4:** `git submodule add https://github.com/ungive/mediaremote-adapter Vendor/mediaremote-adapter`. `scripts/build-adapter.sh`: if `cmake` missing, print `brew install cmake` and exit 1; else `cmake -S Vendor/mediaremote-adapter -B Vendor/mediaremote-adapter/build && cmake --build Vendor/mediaremote-adapter/build`.
@@ -303,7 +305,7 @@
 
 **Files:**
 - Create: `Sources/IleDelbe/App/NotchPanel.swift`, `Sources/IleDelbe/App/NotchWindowController.swift`, `Sources/IleDelbe/App/AppDelegate.swift`
-- Modify: `Sources/IleDelbe/main.swift`, `README.md`
+- Modify: `Sources/IleDelbe/main.swift`, `Readme.md`
 
 **Interfaces:**
 - Consumes: everything above.
