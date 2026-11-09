@@ -49,6 +49,7 @@ public final class NowPlayingService {
         do {
             try p.run()
         } catch {
+            log.error("adapter launch failed: \(error.localizedDescription, privacy: .public)")
             status = .unavailable("launch failed: \(error.localizedDescription)")
             return
         }
@@ -135,7 +136,12 @@ public final class NowPlayingService {
         if stoppedByUs || code == 0 {
             status = .idle
         } else {
-            if !stderr.isEmpty { log.error("adapter stderr: \(stderr, privacy: .public)") }
+            let tail = String(stderr.suffix(500))
+            if tail.isEmpty {
+                log.error("adapter exited with code \(code)")
+            } else {
+                log.error("adapter exited with code \(code), stderr: \(tail, privacy: .public)")
+            }
             status = .unavailable("exit \(code)")
         }
         stoppedByUs = false

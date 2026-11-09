@@ -84,9 +84,19 @@ final class NotchWindowController {
 
     private func evaluateHover() {
         guard let geometry = model.geometry else { return }
-        let trigger = hover.isOpen ? geometry.expanded : geometry.notch
+        let nowPlaying = model.nowPlaying
+        let trigger: CGRect
+        if hover.isOpen {
+            trigger = geometry.expanded
+        } else if nowPlaying.info?.isPlaying == true {
+            trigger = geometry.closedActive  // the visible pill while playing
+        } else {
+            trigger = geometry.notch
+        }
+        var inTrigger = Self.contains(trigger, NSEvent.mouseLocation)
+        if case .unavailable = nowPlaying.status { inTrigger = false }  // adapter down: show nothing
         let now = ProcessInfo.processInfo.systemUptime
-        hover.update(inTrigger: Self.contains(trigger, NSEvent.mouseLocation), now: now)
+        hover.update(inTrigger: inTrigger, now: now)
         apply()
 
         deadlineWork?.cancel()

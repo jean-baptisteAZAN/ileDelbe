@@ -10,13 +10,14 @@ struct EqualizerView: View {
     private let minHeight: CGFloat = 3
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !isPlaying)) { context in
+        TimelineView(.animation(minimumInterval: 1.0 / 15, paused: !isPlaying)) { context in
             let t = context.date.timeIntervalSinceReferenceDate
             HStack(alignment: .center, spacing: 2) {
                 ForEach(0..<barCount, id: \.self) { i in
                     Capsule()
                         .fill(color)
                         .frame(width: 2.5, height: height(for: i, at: t))
+                        .animation(.linear(duration: 1.0 / 15), value: height(for: i, at: t))
                 }
             }
             .frame(height: maxHeight)

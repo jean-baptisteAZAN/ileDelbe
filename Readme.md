@@ -10,7 +10,7 @@ ileDelbe is a native macOS agent app that turns the MacBook notch into a hover m
 ## Requirements
 
 - A MacBook with a notch, running **macOS 15.4 or later**. External screens and Macs without a notch are not supported.
-- Xcode command line tools (Swift 6).
+- Xcode 16 or later (full Xcode, not only the command line tools: the SwiftUI previews need its macro plugins).
 - `cmake` to build the vendored adapter (`brew install cmake`).
 
 ## Build and run
