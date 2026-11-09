@@ -16,11 +16,6 @@ final class NotchWindowController {
     /// Whether the pointer was last seen inside the bubble rect while closed (open → Minuteur tab).
     private var pointerInBubble = false
 
-    /// The window extends past `expanded` (sides and bottom) only so the open halo is not cut by
-    /// the window edge. Hover/click rects stay geometry-based; the margin is transparent and the
-    /// panel ignores mouse events while closed.
-    static let glowMargin = (horizontal: CGFloat(30), bottom: CGFloat(44))
-
     init(model: NotchViewModel) {
         self.model = model
         panel = NotchPanel(contentRect: .zero)
@@ -81,7 +76,9 @@ final class NotchWindowController {
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
         let e = geometry.expanded
-        let m = Self.glowMargin
+        // The window extends past `expanded` only so the open halo is not cut by the window edge.
+        // That margin never takes clicks: see `updateMousePassThrough`.
+        let m = HaloStyle.windowMargin
         let frame = CGRect(x: e.minX - m.horizontal, y: e.minY - m.bottom,
                            width: e.width + 2 * m.horizontal, height: e.height + m.bottom)
         panel.setFrame(NSIntegralRect(frame), display: true)
@@ -150,6 +147,7 @@ final class NotchWindowController {
         let now = ProcessInfo.processInfo.systemUptime
         hover.update(inTrigger: inTrigger, now: now)
         apply()
+        updateMousePassThrough(inExpanded: Self.contains(geometry.expanded, mouse))
 
         deadlineWork?.cancel()
         deadlineWork = nil
@@ -168,8 +166,17 @@ final class NotchWindowController {
         if hover.isOpen { model.panelWillOpen(fromBubble: pointerInBubble) }
         model.isOpen = hover.isOpen
         if !hover.isOpen { model.panelDidClose() }
-        // Closed: never intercept clicks (menu bar stays usable), bubble included.
-        panel.ignoresMouseEvents = !hover.isOpen
+    }
+
+    /// Clicks reach the panel only while it is open and the pointer is over the panel itself
+    /// (or a file drag is in progress). Closed (bubble included), and in the transparent glow
+    /// margin around the open panel, clicks pass through to the menu bar and apps below.
+    /// Updated on every mouse move.
+    private func updateMousePassThrough(inExpanded: Bool) {
+        let ignores = !((hover.isOpen && inExpanded) || model.isDraggingFile)
+        guard panel.ignoresMouseEvents != ignores else { return }
+        panel.ignoresMouseEvents = ignores
+        log.info("ignoresMouseEvents=\(ignores, privacy: .public)")
     }
 
     /// Inclusive of the max edges: the pointer pinned at the very top of the screen has y == maxY.

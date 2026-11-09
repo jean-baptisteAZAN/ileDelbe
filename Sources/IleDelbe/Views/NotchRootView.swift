@@ -2,6 +2,16 @@ import AppKit
 import IleDelbeCore
 import SwiftUI
 
+/// Halo shadow parameters, shared with the window controller so the window is large enough
+/// for the open glow tail (the window edge would otherwise cut it).
+enum HaloStyle {
+    static let closed = (radius: CGFloat(11), y: CGFloat(0), opacity: 0.9)
+    static let open = (radius: CGFloat(35), y: CGFloat(13), opacity: 0.8)
+    /// Transparent window margin around `expanded`: the blur reaches ~radius beyond the shape,
+    /// shifted down by `y`.
+    static let windowMargin = (horizontal: open.radius, bottom: open.radius + open.y)
+}
+
 /// Fills the panel window (`expanded` plus a transparent glow margin); everything is pinned top-center.
 struct NotchRootView: View {
     let model: NotchViewModel
@@ -23,7 +33,8 @@ struct NotchRootView: View {
                     .fill(Color.black)
                     .frame(width: size.width, height: size.height)
                     .shadow(color: haloColor(layout: layout, isOpen: isOpen),
-                            radius: isOpen ? 35 : 11, y: isOpen ? 13 : 0)
+                            radius: isOpen ? HaloStyle.open.radius : HaloStyle.closed.radius,
+                            y: isOpen ? HaloStyle.open.y : HaloStyle.closed.y)
                 shape
                     .fill(Color.black)
                     .overlay(alignment: .top) {
@@ -48,10 +59,6 @@ struct NotchRootView: View {
             .environment(\.colorScheme, .dark)
             .animation(Self.spring, value: isOpen)
             .animation(Self.spring, value: layout)
-            .onChange(of: model.timer.ringingUnseen) {
-                // The timer rang while the Minuteur tab was on screen: it has been seen.
-                if model.isOpen { model.markTimerSeenIfShown() }
-            }
         }
     }
 
@@ -67,8 +74,8 @@ struct NotchRootView: View {
     /// Closed: soft glow while media plays. Open: stronger glow under the panel while playing.
     private func haloColor(layout: ClosedLayout, isOpen: Bool) -> Color {
         guard model.isPlaying, let glow = model.halo.glow else { return .clear }
-        if isOpen { return glow.opacity(0.8) }
-        return (layout == .media || layout == .mediaAndBubble) ? glow.opacity(0.9) : .clear
+        if isOpen { return glow.opacity(HaloStyle.open.opacity) }
+        return (layout == .media || layout == .mediaAndBubble) ? glow.opacity(HaloStyle.closed.opacity) : .clear
     }
 
     @ViewBuilder

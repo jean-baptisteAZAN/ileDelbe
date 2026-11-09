@@ -36,6 +36,20 @@ final class NotchViewModel {
         self.defaults = defaults
         lastUsedTab = defaults.string(forKey: Self.lastTabKey).flatMap(PanelTab.init(rawValue:)) ?? .music
         selectedTab = lastUsedTab
+        observeRinging()
+    }
+
+    /// The timer rang while the open panel showed Minuteur: it has been seen. Re-arms itself.
+    private func observeRinging() {
+        _ = withObservationTracking {
+            timer.ringingUnseen
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                self.observeRinging()
+                if self.isOpen { self.markTimerSeenIfShown() }
+            }
+        }
     }
 
     var isPlaying: Bool { nowPlaying.info?.isPlaying == true }
@@ -68,7 +82,7 @@ final class NotchViewModel {
     }
 
     /// Clears `ringingUnseen` when the Minuteur tab is (about to be) on screen. Callers: panel
-    /// opening, tab selection, and the open panel when the timer rings while shown.
+    /// opening, tab selection, and `observeRinging` when the timer rings while shown.
     func markTimerSeenIfShown() {
         if selectedTab == .timer, timer.ringingUnseen {
             timer.ringingUnseen = false
