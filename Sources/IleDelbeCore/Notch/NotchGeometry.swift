@@ -8,7 +8,7 @@ public struct NotchGeometry: Equatable, Sendable {
     public let expanded: CGRect
     public let bubble: CGRect
     public static let closedActiveWing: CGFloat = 36
-    public static let alertWing: CGFloat = 90
+    public static let alertWing: CGFloat = 110
     public static let expandedSize = CGSize(width: 548, height: 236)
     public static let bubbleWidth: CGFloat = 76
     public static let bubbleGap: CGFloat = 8

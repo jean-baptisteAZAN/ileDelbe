@@ -2,7 +2,7 @@ import AppKit
 import IleDelbeCore
 import SwiftUI
 
-/// Fills a window sized to `geometry.expanded`; the black shape is pinned top-center.
+/// Fills the panel window (`expanded` plus a transparent glow margin); everything is pinned top-center.
 struct NotchRootView: View {
     let model: NotchViewModel
 
@@ -12,15 +12,22 @@ struct NotchRootView: View {
 
     var body: some View {
         if let geometry = model.geometry {
-            let info = model.nowPlaying.info
-            let isPlaying = info?.isPlaying == true
-            let size = shapeSize(geometry, isPlaying: isPlaying)
-            let shape = NotchShape(bottomRadius: model.isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
+            let layout = model.closedLayout
+            let isOpen = model.isOpen
+            let size = shapeSize(geometry, layout: layout)
+            let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
             ZStack(alignment: .top) {
+                // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
+                // below (needed for the open/close animation) cannot cut it.
+                shape
+                    .fill(Color.black)
+                    .frame(width: size.width, height: size.height)
+                    .shadow(color: haloColor(layout: layout, isOpen: isOpen),
+                            radius: isOpen ? 35 : 11, y: isOpen ? 13 : 0)
                 shape
                     .fill(Color.black)
                     .overlay(alignment: .top) {
-                        content(geometry: geometry, info: info, isPlaying: isPlaying)
+                        content(geometry: geometry, layout: layout)
                     }
                     .frame(width: size.width, height: size.height)
                     // Keep content inside the black shape while it shrinks/grows.
@@ -28,39 +35,98 @@ struct NotchRootView: View {
                     .contextMenu {
                         Button("Quitter") { NSApp.terminate(nil) }
                     }
+                if !isOpen && layout == .mediaAndBubble {
+                    BubbleView(timer: model.timer.timer, now: model.timer.now)
+                        .offset(x: geometry.bubble.midX - geometry.expanded.midX)
+                        .transition(.scale(scale: 0.6, anchor: .leading)
+                            .combined(with: .offset(x: -30))
+                            .combined(with: .opacity))
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .animation(Self.spring, value: model.isOpen)
-            .animation(Self.spring, value: isPlaying)
+            // Always black: `.secondary` text must resolve for a dark background, even in light mode.
+            .environment(\.colorScheme, .dark)
+            .animation(Self.spring, value: isOpen)
+            .animation(Self.spring, value: layout)
+            .onChange(of: model.timer.ringingUnseen) {
+                // The timer rang while the Minuteur tab was on screen: it has been seen.
+                if model.isOpen { model.markTimerSeenIfShown() }
+            }
         }
     }
 
-    private func shapeSize(_ g: NotchGeometry, isPlaying: Bool) -> CGSize {
+    private func shapeSize(_ g: NotchGeometry, layout: ClosedLayout) -> CGSize {
         if model.isOpen { return g.expanded.size }
-        return isPlaying ? g.closedActive.size : g.notch.size
+        switch layout {
+        case .plain: return g.notch.size
+        case .media, .mediaAndBubble, .timer: return g.closedActive.size
+        case .alert: return g.closedAlert.size
+        }
+    }
+
+    /// Closed: soft glow while media plays. Open: stronger glow under the panel while playing.
+    private func haloColor(layout: ClosedLayout, isOpen: Bool) -> Color {
+        guard model.isPlaying, let glow = model.halo.glow else { return .clear }
+        if isOpen { return glow.opacity(0.8) }
+        return (layout == .media || layout == .mediaAndBubble) ? glow.opacity(0.9) : .clear
     }
 
     @ViewBuilder
-    private func content(geometry g: NotchGeometry, info: NowPlayingInfo?, isPlaying: Bool) -> some View {
+    private func content(geometry g: NotchGeometry, layout: ClosedLayout) -> some View {
         if model.isOpen {
-            ExpandedPlayerView(
-                info: info,
-                isOpen: true,
+            VStack(alignment: .leading, spacing: 12) {
+                TabBarView(selected: model.selectedTab, timerActive: model.timer.timer.isActive,
+                           infoLine: model.calendar.infoLine, onSelect: { model.select($0) })
+                pane(model.selectedTab)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            // Clear the hardware notch band at the top, then pad the rest.
+            .padding(.top, g.notch.height + 6)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 14)
+            .transition(.opacity)
+        } else if layout != .plain {
+            ClosedActivityView(layout: layout, artworkData: model.nowPlaying.info?.artworkData,
+                               isPlaying: model.isPlaying, timer: model.timer.timer, now: model.timer.now,
+                               glow: model.isPlaying ? model.halo.glow : nil)
+                .frame(height: g.notch.height)
+                .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
+    private func pane(_ tab: PanelTab) -> some View {
+        switch tab {
+        case .music:
+            MusicPaneView(
+                info: model.nowPlaying.info,
+                history: model.history.history.recent(excluding: model.nowPlaying.info),
+                glow: model.halo.glow,
                 volume: model.volume.volume,
                 isVolumeSettable: model.volume.isSettable,
                 onCommand: { model.nowPlaying.send($0) },
-                onVolume: { model.volume.set($0) }
-            )
-            // Clear the hardware notch band at the top, then pad the rest.
-            .padding(.top, g.notch.height + 6)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 14)
-            .transition(.opacity)
-        } else if isPlaying {
-            ClosedActivityView(layout: .media, artworkData: info?.artworkData, isPlaying: true,
-                               timer: CountdownTimer(), now: .now, glow: nil)
-                .frame(height: g.notch.height)
-                .transition(.opacity)
+                onVolume: { model.volume.set($0) })
+        case .timer:
+            let timer = model.timer
+            TimerPaneView(
+                timer: timer.timer, now: timer.now,
+                onStart: { timer.start($0) }, onAddMinute: { timer.addMinute() },
+                onPause: { timer.pause() }, onResume: { timer.resume() },
+                onStop: { timer.stop() }, onAcknowledge: { timer.acknowledge() })
+        case .agenda:
+            let calendar = model.calendar
+            AgendaPaneView(
+                access: calendar.access, events: calendar.upcoming, now: Date(),
+                onAppear: { calendar.requestAccessIfNeeded() },
+                onJoin: { NSWorkspace.shared.open($0) },
+                onOpenSettings: { calendar.openPrivacySettings() })
+        case .files:
+            let files = model.files
+            FilesPaneView(
+                files: files.files, home: FileManager.default.homeDirectoryForCurrentUser,
+                icon: { files.icon(for: $0) }, now: Date(),
+                onOpen: { files.open($0) },
+                onDragStart: { model.isDraggingFile = true })
         }
     }
 }

@@ -21,7 +21,7 @@ import Testing
 
     @Test func closedAlertRect() {
         let g = make()
-        #expect(g?.closedAlert == CGRect(x: 572, y: 950, width: 368, height: 32))
+        #expect(g?.closedAlert == CGRect(x: 552, y: 950, width: 408, height: 32))
         #expect(g.map { $0.expanded.contains($0.closedAlert) } == true)
     }
 
