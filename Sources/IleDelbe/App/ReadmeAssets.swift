@@ -223,8 +223,7 @@ private struct Scene: View {
 
     private var menuBar: some View {
         HStack(spacing: 18) {
-            Image(systemName: "apple.logo").font(.system(size: 14, weight: .medium))
-            Text("Finder").fontWeight(.bold)
+            Text("Éditeur").fontWeight(.bold)
             Text("Fichier")
             Spacer()
             Image(systemName: "wifi")
