@@ -7,6 +7,6 @@ let package = Package(
     targets: [
         .target(name: "IleDelbeCore"),
         .executableTarget(name: "IleDelbe", dependencies: ["IleDelbeCore"]),
-        .testTarget(name: "IleDelbeCoreTests", dependencies: ["IleDelbeCore"]),
+        .testTarget(name: "IleDelbeCoreTests", dependencies: ["IleDelbeCore"], resources: [.copy("Fixtures")]),
     ]
 )
