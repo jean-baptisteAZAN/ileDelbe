@@ -15,13 +15,16 @@ struct NotchRootView: View {
             let info = model.nowPlaying.info
             let isPlaying = info?.isPlaying == true
             let size = shapeSize(geometry, isPlaying: isPlaying)
+            let shape = NotchShape(bottomRadius: model.isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
             ZStack(alignment: .top) {
-                NotchShape(bottomRadius: model.isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
+                shape
                     .fill(Color.black)
                     .overlay(alignment: .top) {
                         content(geometry: geometry, info: info, isPlaying: isPlaying)
                     }
                     .frame(width: size.width, height: size.height)
+                    // Keep content inside the black shape while it shrinks/grows.
+                    .clipShape(shape)
                     .contextMenu {
                         Button("Quitter") { NSApp.terminate(nil) }
                     }
