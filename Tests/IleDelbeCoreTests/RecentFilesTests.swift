@@ -33,10 +33,18 @@ import Testing
         #expect(RecentFiles.select([a, a], home: home).count == 1)
     }
 
+    @Test func dedupeKeepsNewest() {
+        let old = f("/Users/test/a.txt", 1), new = f("/Users/test/./a.txt", 9)
+        let r = RecentFiles.select([old, new], home: home)
+        #expect(r.count == 1)
+        #expect(r.first?.lastUsed == Date(timeIntervalSince1970: 9))
+    }
+
     @Test func parentName() {
-        #expect(f("/Users/test/Downloads/a.pdf", 0).parentName == "Téléchargements")
-        #expect(f("/Users/test/Desktop/b.png", 0).parentName == "Bureau")
-        #expect(f("/Users/test/Documents/d.png", 0).parentName == "Documents")
-        #expect(f("/Users/test/Projets/c.txt", 0).parentName == "Projets")
+        #expect(f("/Users/test/Downloads/a.pdf", 0).parentName(home: home) == "Téléchargements")
+        #expect(f("/Users/test/Desktop/b.png", 0).parentName(home: home) == "Bureau")
+        #expect(f("/Users/test/Documents/d.png", 0).parentName(home: home) == "Documents")
+        #expect(f("/Users/test/Projets/c.txt", 0).parentName(home: home) == "Projets")
+        #expect(f("/Users/other/Desktop/x.png", 0).parentName(home: home) == "Desktop")
     }
 }

@@ -13,13 +13,9 @@ public struct RecentFile: Equatable, Sendable, Identifiable {
     public var name: String { url.lastPathComponent }
 
     /// French label for home's Desktop/Documents/Downloads direct children; else the parent folder name.
-    public var parentName: String {
+    public func parentName(home: URL) -> String {
         let parent = url.deletingLastPathComponent()
-        let grand = parent.deletingLastPathComponent().path
-        let home = NSHomeDirectory()
-        // Mapping applies only when the grandparent looks like a home directory (/Users/x or real home).
-        let isHomeChild = grand == home || grand.split(separator: "/").count == 2 && grand.hasPrefix("/Users/")
-        if isHomeChild {
+        if parent.deletingLastPathComponent().standardizedFileURL.path == home.standardizedFileURL.path {
             switch parent.lastPathComponent {
             case "Desktop": return "Bureau"
             case "Downloads": return "Téléchargements"
@@ -36,15 +32,18 @@ public enum RecentFiles {
 
     public static func select(_ candidates: [RecentFile], home: URL) -> [RecentFile] {
         let library = home.appendingPathComponent("Library").standardizedFileURL.pathComponents
-        var seen = Set<URL>()
-        let valid = candidates.filter { file in
-            guard !file.isDirectory else { return false }
+        var newest: [URL: RecentFile] = [:]
+        for file in candidates {
+            guard !file.isDirectory else { continue }
             let comps = file.url.standardizedFileURL.pathComponents
-            if comps.contains(where: { $0.hasPrefix(".") && $0 != "." && $0 != ".." }) { return false }
-            if comps.contains(where: { $0.lowercased().hasSuffix(".app") }) { return false }
-            if comps.count >= library.count && Array(comps.prefix(library.count)) == library { return false }
-            return seen.insert(file.url).inserted
+            if comps.contains(where: { $0.hasPrefix(".") && $0 != "." && $0 != ".." }) { continue }
+            if comps.contains(where: { $0.lowercased().hasSuffix(".app") }) { continue }
+            if comps.count >= library.count && Array(comps.prefix(library.count)) == library { continue }
+            let key = file.url.standardizedFileURL
+            if let existing = newest[key], existing.lastUsed >= file.lastUsed { continue }
+            newest[key] = file
         }
+        let valid = Array(newest.values)
         return Array(valid.sorted { $0.lastUsed > $1.lastUsed }.prefix(limit))
     }
 }
