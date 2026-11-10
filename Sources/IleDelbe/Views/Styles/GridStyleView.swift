@@ -128,11 +128,14 @@ struct CardStack: Layout {
 #Preview("Grille, music only") { gridPreview([.music]) }
 #Preview("Grille, no music") { gridPreview([.timer, .agenda, .files]) }
 #Preview("Grille, virtual notch 24") { gridPreview(PanelTab.allCases, notchHeight: 24) }
-#Preview("Grille, empty") {
+@MainActor private func emptyPreview(notchHeight: CGFloat) -> some View {
     EmptyPanelView(onSettings: {})
         .frame(width: 300, height: 80)
-        .padding(.top, 32)
+        .padding(.top, notchHeight)
         .background(NotchShape(bottomRadius: NotchShape.openRadius).fill(.black))
         .environment(\.colorScheme, .dark)
 }
+
+#Preview("Grille, empty") { emptyPreview(notchHeight: 32) }
+#Preview("Grille, empty, virtual notch 24") { emptyPreview(notchHeight: 24) }
 #endif

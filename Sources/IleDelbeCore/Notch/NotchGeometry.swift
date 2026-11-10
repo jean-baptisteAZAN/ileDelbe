@@ -48,7 +48,8 @@ public struct NotchGeometry: Equatable, Sendable {
                width: Self.idleBarSize.width, height: Self.idleBarSize.height)
     }
 
-    private func isIdleVirtual(_ wings: ClosedWings) -> Bool { isVirtual && wings == .none }
+    /// Virtual notch at rest (nothing in the wings): drawn as the thin idle bar.
+    public func isIdleVirtual(_ wings: ClosedWings) -> Bool { isVirtual && wings == .none }
 
     /// What is drawn when closed.
     public func closedShapeRect(_ wings: ClosedWings) -> CGRect {

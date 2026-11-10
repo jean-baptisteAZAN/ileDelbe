@@ -263,7 +263,7 @@ private struct Scene: View {
                 .frame(width: size.width, height: size.height)
                 .clipShape(shape)
             if !isOpen && layout == .mediaAndBubble {
-                BubbleView(timer: sample.timer, now: sample.now)
+                BubbleView(timer: sample.timer, now: sample.now, height: g.notch.height)
                     .offset(x: g.bubbleRect(after: g.closedRect(.standard)).midX - g.openRect(size: panelSize(g)).midX)
             }
         }
