@@ -6,3 +6,4 @@ Vendor/mediaremote-adapter/build/
 xcuserdata/
 DerivedData/
 *.xcuserstate
+.superpowers/
