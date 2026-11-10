@@ -8,9 +8,9 @@ import Testing
         RecentFile(url: URL(fileURLWithPath: path), lastUsed: Date(timeIntervalSince1970: t), isDirectory: dir)
     }
 
-    @Test func keepsThreeNewest() {
-        let c = (1...5).map { f("/Users/test/Documents/f\($0).txt", Double($0)) }
-        #expect(RecentFiles.select(c, home: home).map(\.name) == ["f5.txt", "f4.txt", "f3.txt"])
+    @Test func keepsFiveNewest() {
+        let c = (1...7).map { f("/Users/test/Documents/f\($0).txt", Double($0)) }
+        #expect(RecentFiles.select(c, home: home).map(\.name) == ["f7.txt", "f6.txt", "f5.txt", "f4.txt", "f3.txt"])
     }
 
     @Test func excludes() {

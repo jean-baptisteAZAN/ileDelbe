@@ -27,4 +27,18 @@ import CoreGraphics
         let m = PanelSizing.maxSize(style: .island, modules: all, density: .normal, notchHeight: 32)
         #expect(m == CGSize(width: 640, height: 268))
     }
+    @Test func windowFrameCoversEveryStateOfStyle() {
+        let subsets: [[PanelTab]] = [[], [.music], [.timer], [.music, .timer, .agenda, .files], [.timer, .agenda, .files]]
+        for style in PanelStyle.allCases {
+            for d in PanelDensity.allCases {
+                for m in subsets {
+                    let max = PanelSizing.maxSize(style: style, modules: m, density: d, notchHeight: 32)
+                    for showsAll in [false, true] {
+                        let s = PanelSizing.size(style: style, showsAll: showsAll && style == .island, modules: m, density: d, notchHeight: 32)
+                        #expect(s.width <= max.width && s.height <= max.height)
+                    }
+                }
+            }
+        }
+    }
 }
