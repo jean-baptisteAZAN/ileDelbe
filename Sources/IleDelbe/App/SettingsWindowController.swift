@@ -18,9 +18,10 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func show() {
         let window = self.window ?? makeWindow()
         self.window = window
-        if !window.isVisible {
-            let front = NSWorkspace.shared.frontmostApplication
-            previousApp = front?.processIdentifier == ProcessInfo.processInfo.processIdentifier ? nil : front
+        // Record on every show, not only when hidden, so the remembered app is never stale.
+        if let front = NSWorkspace.shared.frontmostApplication,
+           front.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            previousApp = front
         }
         loginItem.refresh()
         NSApp.activate()
@@ -41,6 +42,12 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func windowWillClose(_ notification: Notification) {
         let app = previousApp
         previousApp = nil
-        app?.activate()
+        // Closed while the user already moved on to another app: leave focus alone.
+        guard NSApp.isActive else { return }
+        if let app, !app.isTerminated {
+            app.activate()
+        } else {
+            NSApp.deactivate()
+        }
     }
 }

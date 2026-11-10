@@ -64,10 +64,10 @@ struct SettingsView: View {
 
             Section {
                 Picker("Encoche fermée pendant la lecture", selection: bind(\.closedStyle)) {
-                    Text("Pochette").tag(ClosedStyle.artworkEqualizer)
+                    Text("Pochette + égaliseur").tag(ClosedStyle.artworkEqualizer)
                     Text("Titre").tag(ClosedStyle.title)
                     Text("Rien").tag(ClosedStyle.none)
-                }.pickerStyle(.segmented)
+                }.pickerStyle(.menu)
                 Toggle("Animer l'encoche fermée", isOn: bind(\.animateClosed))
                 LabeledContent("Délai d'ouverture au survol") {
                     HStack {
