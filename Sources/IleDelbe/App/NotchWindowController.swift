@@ -81,13 +81,19 @@ final class NotchWindowController {
     // MARK: Geometry
 
     /// The screen moved, resized or changed its menu bar: re-frame the window on `geometry`.
-    func update(geometry: NotchGeometry) {
-        guard !isTornDown, geometry != self.geometry else { return }
-        self.geometry = geometry
-        hosting.rootView = NotchRootView(model: model, screenID: id, geometry: geometry)
-        layout()
+    /// `fromScreenChange`: called for `didChangeScreenParametersNotification` (wake, KVM, same-frame
+    /// reconnect): re-apply the frame, order the panel front (no focus) and re-check hover even
+    /// when the geometry is unchanged, as the window server may have dropped or moved the panel.
+    func update(geometry: NotchGeometry, fromScreenChange: Bool) {
+        guard !isTornDown else { return }
+        let changed = geometry != self.geometry
+        if changed {
+            self.geometry = geometry
+            hosting.rootView = NotchRootView(model: model, screenID: id, geometry: geometry)
+        }
+        if changed || fromScreenChange { layout() }
         // The open size depends on the notch height: track the new geometry.
-        observeWindowSize()
+        if changed { observeWindowSize() }
     }
 
     /// The screen is gone or no longer selected: close, stop listening, hide the window.

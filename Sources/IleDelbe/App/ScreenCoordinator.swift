@@ -12,16 +12,18 @@ final class ScreenCoordinator {
     private let log = Logger(subsystem: "io.github.ileDelbe", category: "screens")
     private var controllers: [String: NotchWindowController] = [:]
     private var screenObserver: NSObjectProtocol?
+    /// The last seen « Écrans » selection: rebuild on a settings change only when it differs.
+    private var lastSelection: (mode: ScreenMode, chosenID: String?)?
 
     init(model: NotchViewModel, settings: SettingsStore) {
         self.model = model
         self.settings = settings
-        rebuild()
+        rebuild(fromScreenChange: false)
         observeSelection()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.rebuild() }
+            MainActor.assumeIsolated { self?.rebuild(fromScreenChange: true) }
         }
     }
 
@@ -36,15 +38,23 @@ final class ScreenCoordinator {
             (settings.settings.screenMode, settings.settings.chosenScreenID)
         } onChange: { [weak self] in
             Task { @MainActor in
-                self?.observeSelection()
-                self?.rebuild()
+                guard let self else { return }
+                self.observeSelection()
+                let s = self.settings.settings
+                if let last = self.lastSelection, last.mode == s.screenMode, last.chosenID == s.chosenScreenID {
+                    return  // another setting changed (or the same value was written back)
+                }
+                self.rebuild(fromScreenChange: false)
             }
         }
     }
 
-    private func rebuild() {
+    /// `fromScreenChange`: the screen parameters changed (wake, KVM, reconnect): every kept
+    /// controller re-frames and re-orders its panel even when its geometry is unchanged.
+    private func rebuild(fromScreenChange: Bool) {
         let screens = ScreenProvider.current()
         let s = settings.settings
+        lastSelection = (s.screenMode, s.chosenScreenID)
         let targets = ScreenSelection.targets(screens.map(\.info), mode: s.screenMode, chosenID: s.chosenScreenID)
         let wanted = Set(targets)
 
@@ -62,7 +72,7 @@ final class ScreenCoordinator {
             guard let entry = screens.first(where: { $0.info.id == id }) else { continue }
             let geometry = ScreenProvider.geometry(for: entry.screen)
             if let controller = controllers[id] {
-                controller.update(geometry: geometry)
+                controller.update(geometry: geometry, fromScreenChange: fromScreenChange)
             } else {
                 controllers[id] = NotchWindowController(model: model, screenID: id, geometry: geometry)
                 log.info("""
