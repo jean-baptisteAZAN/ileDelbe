@@ -86,4 +86,39 @@ import Testing
         let o = wg.openRect(size: size)
         #expect(frame(size) == CGRect(x: o.minX - 35, y: o.minY - 48, width: o.width + 70, height: o.height + 48))
     }
+
+    private let ext = NotchGeometry.virtual(screenFrame: CGRect(x: 1512, y: 0, width: 2560, height: 1440), menuBarHeight: 24)
+
+    @Test func virtualNotch() {
+        #expect(ext.isVirtual)
+        #expect(ext.notch == CGRect(x: 2702, y: 1416, width: 180, height: 24))
+    }
+    @Test func idleBar() {
+        #expect(ext.idleBarRect == CGRect(x: 2732, y: 1436, width: 120, height: 4))
+        #expect(ext.closedShapeRect(.none) == ext.idleBarRect)
+        #expect(ext.closedShapeRect(.standard) == ext.closedRect(.standard))
+    }
+    @Test func idleTrigger() {
+        #expect(ext.closedTriggerRect(.none) == CGRect(x: 2732, y: 1430, width: 120, height: 10))
+    }
+    @Test func hardwareNotchUnchanged() {
+        let g = make()!
+        #expect(!g.isVirtual && g.closedShapeRect(.none) == g.notch && g.closedTriggerRect(.none) == g.notch)
+    }
+    @Test func menuBarHeightFallback() {
+        let s = CGRect(x: 0, y: 0, width: 100, height: 100)
+        #expect(NotchGeometry.menuBarHeight(screenFrame: s, visibleFrame: CGRect(x: 0, y: 0, width: 100, height: 76), fallback: 24) == 24)
+        #expect(NotchGeometry.menuBarHeight(screenFrame: s, visibleFrame: s, fallback: 24) == 24)
+        #expect(NotchGeometry.menuBarHeight(screenFrame: s, visibleFrame: CGRect(x: 0, y: 0, width: 100, height: 70), fallback: 24) == 30)
+    }
+    @Test func virtualBubble() {
+        let bubble = ext.bubbleRect(after: ext.closedRect(.standard))
+        #expect(bubble == CGRect(x: 2926, y: 1416, width: 76, height: 24))
+        let w = ext.windowFrame(openSize: CGSize(width: 460, height: 120), openMargin: (horizontal: 35, bottom: 48), closedMargin: 11)
+        #expect(w.contains(bubble))
+    }
+    @Test func virtualWindowFrameCoversPill() {
+        let w = ext.windowFrame(openSize: CGSize(width: 460, height: 120), openMargin: (horizontal: 35, bottom: 48), closedMargin: 11)
+        #expect(w.contains(ext.closedRect(.alert)) && w.contains(ext.idleBarRect))
+    }
 }

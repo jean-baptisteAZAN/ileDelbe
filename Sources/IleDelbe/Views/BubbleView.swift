@@ -6,7 +6,9 @@ struct BubbleView: View {
     var timer: CountdownTimer
     var now: Date
 
-    static let size = CGSize(width: 76, height: 32)
+    static let width: CGFloat = 76
+    /// The pill's height: the screen's notch (menu bar) height, 32 on hardware.
+    var height: CGFloat = 32
 
     var body: some View {
         HStack(spacing: 6) {
@@ -15,7 +17,7 @@ struct BubbleView: View {
                 .font(.system(size: 12.5, weight: .semibold).monospacedDigit())
                 .foregroundStyle(Color.timerOrange)
         }
-        .frame(width: Self.size.width, height: Self.size.height)
+        .frame(width: Self.width, height: height)
         .background(NotchShape(bottomRadius: 16).fill(Color.black))
     }
 }

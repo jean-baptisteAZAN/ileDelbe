@@ -117,6 +117,7 @@ extension PanelTab {
 @MainActor private struct IslandPreview: View {
     var modules: [PanelTab] = PanelTab.allCases
     @State var selected: PanelTab
+    var notchHeight: CGFloat = 32
     var timer: CountdownTimer = PreviewSamples.runningTimer
     var timerNow: Date = PreviewSamples.runningNow
 
@@ -126,12 +127,13 @@ extension PanelTab {
             PreviewSamples.compactPage(module, timer: timer, now: timerNow)
         }
         .frame(width: 460, height: 96)
-        .padding(.top, 32)
+        .padding(.top, notchHeight)
         .background(NotchShape(bottomRadius: NotchShape.openRadius).fill(.black))
         .environment(\.colorScheme, .dark)
     }
 }
 
+#Preview("Île, virtual notch 24") { IslandPreview(selected: .music, notchHeight: 24) }
 #Preview("Île, Musique") { IslandPreview(selected: .music) }
 #Preview("Île, Minuteur") { IslandPreview(selected: .timer) }
 #Preview("Île, Agenda") { IslandPreview(selected: .agenda) }

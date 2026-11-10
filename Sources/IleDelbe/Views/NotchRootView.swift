@@ -12,72 +12,96 @@ enum HaloStyle {
     static let windowMargin = (horizontal: open.radius, bottom: open.radius + open.y)
 }
 
+/// How the closed notch is drawn on a screen: size and offset from `closedShapeRect` (the rect the
+/// hover trigger derives from), corner radius of the thin idle bar or of the pill. Shared with previews.
+struct ClosedDrawing {
+    let size: CGSize
+    let offsetX: CGFloat
+    let radius: CGFloat
+
+    init(geometry g: NotchGeometry, wings: ClosedWings) {
+        let rect = g.closedShapeRect(wings)
+        size = rect.size
+        offsetX = rect.midX - g.notch.midX
+        radius = g.isIdleVirtual(wings) ? NotchShape.idleBarRadius : NotchShape.closedRadius
+    }
+}
+
 /// Fills the panel window (the largest open panel or closed pill, plus a transparent glow
 /// margin); everything is pinned top-center, so the shape is sized from the model, never the window.
+/// One per screen: `screenID` and `geometry` are that screen's, the model is shared.
 struct NotchRootView: View {
     let model: NotchViewModel
+    let screenID: String
+    let geometry: NotchGeometry
 
     private static let spring = Animation.spring(response: 0.35, dampingFraction: 0.8)
 
-    init(model: NotchViewModel) { self.model = model }
+    init(model: NotchViewModel, screenID: String, geometry: NotchGeometry) {
+        self.model = model
+        self.screenID = screenID
+        self.geometry = geometry
+    }
 
     var body: some View {
-        if let geometry = model.geometry {
-            let layout = model.closedLayout
-            let wings = model.closedWings
-            let isOpen = model.isOpen
-            let size = isOpen ? model.panelSize : geometry.closedRect(wings).size
-            // Asymmetric wings (title mode): shift the closed pill so it is drawn exactly on
-            // `closedRect(wings)`, the hover rect, with the hardware notch staying in place.
-            // Animates with the size under the same spring.
-            let offsetX = isOpen ? 0 : geometry.closedOffsetX(wings)
-            let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
-            ZStack(alignment: .top) {
-                // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
-                // below (needed for the open/close animation) cannot cut it.
-                shape
-                    .fill(Color.black)
-                    .frame(width: size.width, height: size.height)
-                    .shadow(color: haloColor(layout: layout, isOpen: isOpen),
-                            radius: isOpen ? HaloStyle.open.radius : HaloStyle.closed.radius,
-                            y: isOpen ? HaloStyle.open.y : HaloStyle.closed.y)
-                    .offset(x: offsetX)
-                shape
-                    .fill(Color.black)
-                    .overlay(alignment: .top) {
-                        content(geometry: geometry, layout: layout)
-                    }
-                    .frame(width: size.width, height: size.height)
-                    // Keep content inside the black shape while it shrinks/grows.
-                    .clipShape(shape)
-                    .offset(x: offsetX)
-                    .contextMenu {
-                        Button("Réglages…") { model.onOpenSettings?() }
-                        Button("Quitter") { NSApp.terminate(nil) }
-                    }
-                if !isOpen && layout == .mediaAndBubble {
-                    BubbleView(timer: model.timer.timer, now: model.timer.now)
-                        // Content is centered on the notch: offset from its center.
-                        .offset(x: geometry.bubbleRect(after: geometry.closedRect(wings)).midX - geometry.notch.midX)
-                        .transition(.scale(scale: 0.6, anchor: .leading)
-                            .combined(with: .offset(x: -30))
-                            .combined(with: .opacity))
+        let layout = model.closedLayout
+        let wings = model.closedWings
+        let isOpen = model.isOpen(on: screenID)
+        // Drawn on `closedShapeRect(wings)`, the same rect the hover trigger derives from: on a
+        // virtual notch at rest that is the thin idle bar, otherwise the pill.
+        let closed = ClosedDrawing(geometry: geometry, wings: wings)
+        let size = isOpen ? model.panelSize(for: geometry) : closed.size
+        // Asymmetric wings (title mode): shift the closed pill so it is drawn exactly on
+        // `closedRect(wings)`, the hover rect, with the hardware notch staying in place.
+        // Animates with the size under the same spring.
+        let offsetX = isOpen ? 0 : closed.offsetX
+        let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : closed.radius)
+        ZStack(alignment: .top) {
+            // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
+            // below (needed for the open/close animation) cannot cut it.
+            shape
+                .fill(Color.black)
+                .frame(width: size.width, height: size.height)
+                .shadow(color: haloColor(layout: layout, isOpen: isOpen),
+                        radius: isOpen ? HaloStyle.open.radius : HaloStyle.closed.radius,
+                        y: isOpen ? HaloStyle.open.y : HaloStyle.closed.y)
+                .offset(x: offsetX)
+            shape
+                .fill(Color.black)
+                .overlay(alignment: .top) {
+                    content(geometry: geometry, layout: layout)
                 }
+                .frame(width: size.width, height: size.height)
+                // Keep content inside the black shape while it shrinks/grows.
+                .clipShape(shape)
+                .offset(x: offsetX)
+                .contextMenu {
+                    Button("Réglages…") { model.onOpenSettings?() }
+                    Button("Quitter") { NSApp.terminate(nil) }
+                }
+            if !isOpen && layout == .mediaAndBubble {
+                BubbleView(timer: model.timer.timer, now: model.timer.now, height: geometry.notch.height)
+                    // Content is centered on the notch: offset from its center.
+                    .offset(x: geometry.bubbleRect(after: geometry.closedRect(wings)).midX - geometry.notch.midX)
+                    .transition(.scale(scale: 0.6, anchor: .leading)
+                        .combined(with: .offset(x: -30))
+                        .combined(with: .opacity))
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // Always black: `.secondary` text must resolve for a dark background, even in light mode.
-            .environment(\.colorScheme, .dark)
-            .animation(Self.spring, value: isOpen)
-            .animation(Self.spring, value: layout)
-            .animation(Self.spring, value: wings)
-            .animation(Self.spring, value: size)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Always black: `.secondary` text must resolve for a dark background, even in light mode.
+        .environment(\.colorScheme, .dark)
+        .animation(Self.spring, value: isOpen)
+        .animation(Self.spring, value: layout)
+        .animation(Self.spring, value: wings)
+        .animation(Self.spring, value: size)
     }
 
     /// Closed: soft glow while media plays. Open: stronger glow under the panel while playing.
     /// No halo without an accent, or with the Musique module hidden.
     private func haloColor(layout: ClosedLayout, isOpen: Bool) -> Color {
-        guard model.isPlaying, model.settings.settings.visibleModules.contains(.music),
+        guard isOpen || !geometry.isIdleVirtual(model.closedWings),
+              model.isPlaying, model.settings.settings.visibleModules.contains(.music),
               let accent = model.accent else { return .clear }
         let scale = model.haloOpacityScale
         if isOpen { return accent.haloOpacity(HaloStyle.open.opacity, scale: scale) }
@@ -93,10 +117,10 @@ struct NotchRootView: View {
 
     @ViewBuilder
     private func content(geometry g: NotchGeometry, layout: ClosedLayout) -> some View {
-        if model.isOpen {
+        if model.isOpen(on: screenID) {
             // Laid out at the Normale size below the hardware notch band, then scaled for
             // Compacte: the band itself never shrinks (`PanelSizing`).
-            let base = model.unscaledPanelSize
+            let base = model.unscaledPanelSize(for: g)
             PanelContentView(model: model)
                 .frame(width: base.width, height: base.height - g.notch.height)
                 .scaleEffect(model.contentScale, anchor: .top)
@@ -124,6 +148,33 @@ private extension NowPlayingInfo {
                        elapsed: 42, timestamp: .now)
     }
 }
+
+/// Closed drawing on a virtual notch, through the same `ClosedDrawing` as `NotchRootView`.
+@MainActor private func virtualClosedPreview(layout: ClosedLayout, wings: ClosedWings) -> some View {
+    let g = NotchGeometry.virtual(screenFrame: CGRect(x: 0, y: 0, width: 600, height: 200), menuBarHeight: 24)
+    let d = ClosedDrawing(geometry: g, wings: wings)
+    let shape = NotchShape(bottomRadius: d.radius)
+    return ZStack(alignment: .top) {
+        shape.fill(.black)
+            .overlay(alignment: .top) {
+                if layout != .plain {
+                    ClosedActivityView(layout: layout, wings: wings, artworkData: nil, isPlaying: true,
+                                       timer: CountdownTimer(), now: .now, glow: .pink)
+                        .frame(height: g.notch.height)
+                }
+            }
+            .frame(width: d.size.width, height: d.size.height)
+            .clipShape(shape)
+            .offset(x: d.offsetX)
+    }
+    .frame(width: 600, height: 60, alignment: .top)
+    .background(Color.gray.opacity(0.4))
+    .environment(\.colorScheme, .dark)
+}
+
+#Preview("Virtual idle bar") { virtualClosedPreview(layout: .plain, wings: .none) }
+#Preview("Virtual pill, media") { virtualClosedPreview(layout: .media, wings: .standard) }
+#Preview("Virtual alert") { virtualClosedPreview(layout: .alert, wings: .alert) }
 
 #Preview("Closed playing") {
     ClosedActivityView(layout: .media, wings: .standard, artworkData: nil, isPlaying: true,

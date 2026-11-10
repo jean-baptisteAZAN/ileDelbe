@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-10
+
+External screens.
+
+### Added
+
+- **Écrans** section in the settings: show the notch on **Écran intégré** (default), **Écran principal**, **Un écran au choix** or **Tous les écrans**.
+- Virtual notch on screens without a notch (external displays, Macs without a notch): a thin idle bar that grows into a pill during activity, sized to the menu bar of that screen.
+- With **Tous les écrans**, alerts show on every notch; only one panel is open at a time.
+- Screens are identified by their display UUID, so the choice survives replugging. Screen changes are handled without polling.
+- README section and image for external screens.
+
+### Changed
+
+- The built-in screen is detected with `CGDisplayIsBuiltin` instead of its name.
+- With the lid closed or no built-in screen, the notch falls back to the main screen.
+- The **Rail** style, planned for this version, moves to a later version.
+
 ## [0.3.0] - 2026-11-10
 
 Styles and a settings window.
@@ -53,7 +71,8 @@ First version: a Now Playing media panel in the notch.
 - Now Playing for any source macOS reports (Spotify, Music, browsers), through the vendored mediaremote-adapter.
 - Non-activating panel that never takes focus and passes clicks outside its shape to the menu bar.
 
-[Unreleased]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jean-baptisteAZAN/ileDelbe/releases/tag/v0.1.0
