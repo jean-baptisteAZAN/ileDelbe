@@ -6,34 +6,54 @@ import IleDelbeCore
 @MainActor
 enum ScreenProvider {
     /// Every connected screen, in `NSScreen.screens` order (the first one is the main screen).
+    /// Ids are unique: identical monitors can share a display UUID, so a repeat gets a
+    /// `#<CGDirectDisplayID>` suffix (the first one keeps the bare UUID).
     static func current() -> [(info: ScreenInfo, screen: NSScreen)] {
         let screens = NSScreen.screens
+        var used = Set<String>()
         return screens.enumerated().map { index, screen in
             let displayID = displayID(of: screen)
-            let info = ScreenInfo(id: identifier(of: screen, displayID: displayID),
+            let base = identifier(of: screen, displayID: displayID)
+            var id = base
+            if used.contains(id) { id = "\(base)#\(displayID.map(String.init) ?? String(index))" }
+            var n = 2
+            while used.contains(id) {
+                id = "\(base)#\(index)-\(n)"
+                n += 1
+            }
+            used.insert(id)
+            let info = ScreenInfo(id: id,
                                   name: screen.localizedName,
                                   isBuiltIn: displayID.map { CGDisplayIsBuiltin($0) != 0 } ?? false,
                                   isMain: index == 0,
-                                  hasNotch: hasNotch(screen))
+                                  hasNotch: hardwareNotch(screen) != nil)
             return (info, screen)
         }
     }
 
     /// The hardware notch when the screen has one, else a virtual notch at its top center,
-    /// as tall as its menu bar (the system menu bar height when it reports none).
+    /// as tall as its menu bar. A screen that reports none (menu bar hidden, not yet laid out)
+    /// borrows the main screen's menu bar height, then the system status bar thickness.
     static func geometry(for screen: NSScreen) -> NotchGeometry {
-        if let g = NotchGeometry.make(screenFrame: screen.frame, safeAreaTop: screen.safeAreaInsets.top,
-                                      auxiliaryTopLeft: screen.auxiliaryTopLeftArea,
-                                      auxiliaryTopRight: screen.auxiliaryTopRightArea) {
-            return g
-        }
+        if let g = hardwareNotch(screen) { return g }
         let height = NotchGeometry.menuBarHeight(screenFrame: screen.frame, visibleFrame: screen.visibleFrame,
-                                                 fallback: NSStatusBar.system.thickness)
+                                                 fallback: fallbackMenuBarHeight())
         return .virtual(screenFrame: screen.frame, menuBarHeight: height)
     }
 
-    private static func hasNotch(_ screen: NSScreen) -> Bool {
-        screen.safeAreaInsets.top > 0 && screen.auxiliaryTopLeftArea != nil && screen.auxiliaryTopRightArea != nil
+    private static func hardwareNotch(_ screen: NSScreen) -> NotchGeometry? {
+        NotchGeometry.make(screenFrame: screen.frame, safeAreaTop: screen.safeAreaInsets.top,
+                           auxiliaryTopLeft: screen.auxiliaryTopLeftArea,
+                           auxiliaryTopRight: screen.auxiliaryTopRightArea)
+    }
+
+    /// The primary screen's own menu bar height when it reports one, else the status bar thickness.
+    private static func fallbackMenuBarHeight() -> CGFloat {
+        if let primary = NSScreen.screens.first {
+            let h = primary.frame.maxY - primary.visibleFrame.maxY
+            if h > 0 { return h }
+        }
+        return NSStatusBar.system.thickness
     }
 
     private static func displayID(of screen: NSScreen) -> CGDirectDisplayID? {

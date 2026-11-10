@@ -166,9 +166,11 @@ struct ScreenChoice: Identifiable, Equatable {
     let isBuiltIn: Bool
 
     /// « Écran intégré » for the built-in screen, else the screen name; repeated names get « (2) », « (3) ».
+    /// A repeated id is dropped (`ScreenProvider` already makes ids unique; `ForEach` needs it).
     static func make(from infos: [ScreenInfo]) -> [ScreenChoice] {
         var seen: [String: Int] = [:]
-        return infos.map { info in
+        var ids = Set<String>()
+        return infos.filter { ids.insert($0.id).inserted }.map { info in
             let base = info.isBuiltIn ? "Écran intégré" : info.name
             let count = (seen[base] ?? 0) + 1
             seen[base] = count
