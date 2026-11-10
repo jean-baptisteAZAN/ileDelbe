@@ -11,6 +11,9 @@ final class NotchWindowController {
     private let log = Logger(subsystem: "io.github.ileDelbe", category: "window")
     private var hover: HoverStateMachine
     private var deadlineWork: DispatchWorkItem?
+    /// A window shrink deferred while open (`applyFrame(deferShrink:)`), applied after closing.
+    private var hasPendingShrink = false
+    private var settleWork: DispatchWorkItem?
     private var monitors: [Any] = []
     private var screenObserver: NSObjectProtocol?
     /// Whether the pointer was last seen inside the bubble rect while closed (open → Minuteur tab).
@@ -95,7 +98,10 @@ final class NotchWindowController {
     /// Frames the window on the largest open size of the current style, density and modules,
     /// widened to cover every closed pill and bubble (`NotchGeometry.windowFrame`).
     /// Only `setFrame`: never reorders the panel or takes focus, so it is safe while open.
-    private func applyFrame() {
+    /// `deferShrink`: while open the shape springs down to a smaller size (~0.35 s), so shrinking
+    /// the window at once would clip it. The window grows now and shrinks once the panel has
+    /// closed (`settleFrameAfterClose`). Hover and pass-through use `panelSize`, not this frame.
+    private func applyFrame(deferShrink: Bool = false) {
         guard let geometry = model.geometry else { return }
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
@@ -103,9 +109,18 @@ final class NotchWindowController {
         // and covers every closed pill + bubble (title mode or the alert can be wider than a
         // small open panel). That extra area never takes clicks: see `updateMousePassThrough`.
         let m = HaloStyle.windowMargin
-        let frame = NSIntegralRect(geometry.windowFrame(openSize: model.maxPanelSize,
+        var frame = NSIntegralRect(geometry.windowFrame(openSize: model.maxPanelSize,
                                                         openMargin: (horizontal: m.horizontal, bottom: m.bottom),
                                                         closedMargin: HaloStyle.closed.radius))
+        if deferShrink && model.isOpen {
+            let covering = frame.union(panel.frame)
+            hasPendingShrink = covering != frame
+            frame = covering
+        } else {
+            hasPendingShrink = false
+            settleWork?.cancel()
+            settleWork = nil
+        }
         guard frame != panel.frame else { return }
         panel.setFrame(frame, display: true)
         log.info("panel frame \(NSStringFromRect(self.panel.frame), privacy: .public)")
@@ -118,7 +133,7 @@ final class NotchWindowController {
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.observeWindowSize()
-                self?.applyFrame()
+                self?.applyFrame(deferShrink: true)
                 self?.evaluateHover()
             }
         }
@@ -239,7 +254,25 @@ final class NotchWindowController {
         guard model.isOpen != hover.isOpen else { return }
         if hover.isOpen { model.panelWillOpen(fromBubble: pointerInBubble) }
         model.isOpen = hover.isOpen
-        if !hover.isOpen { model.panelDidClose() }
+        if !hover.isOpen {
+            model.panelDidClose()
+            settleFrameAfterClose()
+        }
+    }
+
+    /// Applies a shrink deferred while open, once the closing spring has run (the shape may
+    /// still be shrinking from a size larger than the new window). Skipped if it reopens.
+    private func settleFrameAfterClose() {
+        guard hasPendingShrink else { return }
+        settleWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !self.model.isOpen else { return }
+                self.applyFrame()
+            }
+        }
+        settleWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
     }
 
     /// Clicks reach the panel only while it is open and the pointer is over the panel itself
