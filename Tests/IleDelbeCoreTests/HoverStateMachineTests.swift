@@ -50,6 +50,25 @@ import Testing
         #expect(m.nextDeadline == 1.30)
     }
 
+    @Test func customOpenDelay() {
+        var h = HoverStateMachine(openDelay: 0.5)
+        h.update(inTrigger: true, now: 0); h.update(inTrigger: true, now: 0.4)
+        #expect(!h.isOpen)
+        h.update(inTrigger: true, now: 0.5)
+        #expect(h.isOpen)
+    }
+
+    @Test func forceCloseNeedsExitBeforeReopen() {
+        var h = HoverStateMachine()
+        h.update(inTrigger: true, now: 0); h.update(inTrigger: true, now: 0.2)
+        h.forceClose()
+        #expect(!h.isOpen)
+        h.update(inTrigger: true, now: 1); h.update(inTrigger: true, now: 2)
+        #expect(!h.isOpen && h.nextDeadline == nil)
+        h.update(inTrigger: false, now: 3); h.update(inTrigger: true, now: 4); h.update(inTrigger: true, now: 4.2)
+        #expect(h.isOpen)
+    }
+
     private func openMachine() -> HoverStateMachine {
         var m = HoverStateMachine()
         m.update(inTrigger: true, now: 0)

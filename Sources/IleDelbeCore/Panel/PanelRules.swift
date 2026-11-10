@@ -38,4 +38,13 @@ public enum PanelRules {
         case .alert: return .alert
         }
     }
+
+    /// One page forward/back, clamped at both ends. A `current` not in `pages` gives the first page.
+    public static func step(from current: PanelTab?, _ step: PageStep, in pages: [PanelTab]) -> PanelTab? {
+        guard let current, let i = pages.firstIndex(of: current) else { return pages.first }
+        switch step {
+        case .next: return pages[min(i + 1, pages.count - 1)]
+        case .previous: return pages[max(i - 1, 0)]
+        }
+    }
 }
