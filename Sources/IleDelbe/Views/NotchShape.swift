@@ -4,6 +4,8 @@ import SwiftUI
 struct NotchShape: Shape {
     static let closedRadius: CGFloat = 10
     static let openRadius: CGFloat = 22
+    /// Thin idle bar of a virtual notch.
+    static let idleBarRadius: CGFloat = 2
 
     var bottomRadius: CGFloat
 

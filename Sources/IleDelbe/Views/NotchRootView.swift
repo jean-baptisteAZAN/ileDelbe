@@ -32,12 +32,17 @@ struct NotchRootView: View {
         let layout = model.closedLayout
         let wings = model.closedWings
         let isOpen = model.isOpen(on: screenID)
-        let size = isOpen ? model.panelSize(for: geometry) : geometry.closedRect(wings).size
+        // Drawn on `closedShapeRect(wings)`, the same rect the hover trigger derives from: on a
+        // virtual notch at rest that is the thin idle bar, otherwise the pill.
+        let closedShape = geometry.closedShapeRect(wings)
+        let isIdleBar = !isOpen && geometry.isVirtual && wings == .none
+        let size = isOpen ? model.panelSize(for: geometry) : closedShape.size
         // Asymmetric wings (title mode): shift the closed pill so it is drawn exactly on
         // `closedRect(wings)`, the hover rect, with the hardware notch staying in place.
         // Animates with the size under the same spring.
-        let offsetX = isOpen ? 0 : geometry.closedOffsetX(wings)
-        let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
+        let offsetX = isOpen ? 0 : closedShape.midX - geometry.notch.midX
+        let closedRadius = isIdleBar ? NotchShape.idleBarRadius : NotchShape.closedRadius
+        let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : closedRadius)
         ZStack(alignment: .top) {
             // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
             // below (needed for the open/close animation) cannot cut it.
@@ -82,7 +87,8 @@ struct NotchRootView: View {
     /// Closed: soft glow while media plays. Open: stronger glow under the panel while playing.
     /// No halo without an accent, or with the Musique module hidden.
     private func haloColor(layout: ClosedLayout, isOpen: Bool) -> Color {
-        guard model.isPlaying, model.settings.settings.visibleModules.contains(.music),
+        guard !(geometry.isVirtual && !isOpen && model.closedWings == .none),
+              model.isPlaying, model.settings.settings.visibleModules.contains(.music),
               let accent = model.accent else { return .clear }
         let scale = model.haloOpacityScale
         if isOpen { return accent.haloOpacity(HaloStyle.open.opacity, scale: scale) }
@@ -129,6 +135,31 @@ private extension NowPlayingInfo {
                        elapsed: 42, timestamp: .now)
     }
 }
+
+/// Mirrors `NotchRootView`'s closed drawing on a virtual notch: `closedShapeRect` sizes the shape.
+@MainActor private func virtualClosedPreview(layout: ClosedLayout, wings: ClosedWings) -> some View {
+    let g = NotchGeometry.virtual(screenFrame: CGRect(x: 0, y: 0, width: 600, height: 200), menuBarHeight: 24)
+    let rect = g.closedShapeRect(wings)
+    let isBar = layout == .plain
+    let shape = NotchShape(bottomRadius: isBar ? NotchShape.idleBarRadius : NotchShape.closedRadius)
+    return shape.fill(.black)
+        .overlay(alignment: .top) {
+            if !isBar {
+                ClosedActivityView(layout: layout, wings: wings, artworkData: nil, isPlaying: true,
+                                   timer: CountdownTimer(), now: .now, glow: .pink)
+                    .frame(height: g.notch.height)
+            }
+        }
+        .frame(width: rect.width, height: rect.height)
+        .clipShape(shape)
+        .frame(width: 600, height: 60, alignment: .top)
+        .background(Color.gray.opacity(0.4))
+        .environment(\.colorScheme, .dark)
+}
+
+#Preview("Virtual idle bar") { virtualClosedPreview(layout: .plain, wings: .none) }
+#Preview("Virtual pill, media") { virtualClosedPreview(layout: .media, wings: .standard) }
+#Preview("Virtual alert") { virtualClosedPreview(layout: .alert, wings: .alert) }
 
 #Preview("Closed playing") {
     ClosedActivityView(layout: .media, wings: .standard, artworkData: nil, isPlaying: true,

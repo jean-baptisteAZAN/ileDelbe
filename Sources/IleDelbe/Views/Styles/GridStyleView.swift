@@ -112,13 +112,13 @@ struct CardStack: Layout {
 }
 
 #if DEBUG
-@MainActor private func gridPreview(_ modules: [PanelTab], showsAll: Bool = false) -> some View {
-    let size = PanelSizing.size(style: .grid, showsAll: false, modules: modules, density: .normal, notchHeight: 32)
+@MainActor private func gridPreview(_ modules: [PanelTab], showsAll: Bool = false, notchHeight: CGFloat = 32) -> some View {
+    let size = PanelSizing.size(style: .grid, showsAll: false, modules: modules, density: .normal, notchHeight: notchHeight)
     return GridStyleView(modules: modules, onShowPages: showsAll ? {} : nil, onSettings: {}) {
         PreviewSamples.card($0)
     }
-    .frame(width: size.width, height: size.height - 32)
-    .padding(.top, 32)
+    .frame(width: size.width, height: size.height - notchHeight)
+    .padding(.top, notchHeight)
     .background(NotchShape(bottomRadius: NotchShape.openRadius).fill(.black))
     .environment(\.colorScheme, .dark)
 }
@@ -127,6 +127,7 @@ struct CardStack: Layout {
 #Preview("Grille, Tout voir") { gridPreview(PanelTab.allCases, showsAll: true) }
 #Preview("Grille, music only") { gridPreview([.music]) }
 #Preview("Grille, no music") { gridPreview([.timer, .agenda, .files]) }
+#Preview("Grille, virtual notch 24") { gridPreview(PanelTab.allCases, notchHeight: 24) }
 #Preview("Grille, empty") {
     EmptyPanelView(onSettings: {})
         .frame(width: 300, height: 80)
