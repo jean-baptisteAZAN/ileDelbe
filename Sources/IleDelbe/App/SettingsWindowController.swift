@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The Réglages window: one reused, non-resizable window. The app stays an accessory app, so showing it
+/// The Réglages window: one reused window, resizable vertically only (its Form scrolls). The app stays an accessory app, so showing it
 /// activates ileDelbe and closing it hands focus back to the app that was frontmost before.
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
@@ -32,9 +32,18 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         let host = NSHostingController(rootView: SettingsView(store: store, loginItem: loginItem))
         let window = SettingsWindow(contentViewController: host)
         window.title = "Réglages ileDelbe"
-        window.styleMask = [.titled, .closable]
+        window.styleMask = [.titled, .closable, .resizable]
         window.isReleasedWhenClosed = false
         window.delegate = self
+        window.setContentSize(NSSize(width: 520, height: SettingsView.idealHeight))
+        window.contentMinSize = NSSize(width: 520, height: SettingsView.minHeight)
+        window.contentMaxSize = NSSize(width: 520, height: CGFloat.greatestFiniteMagnitude)
+        // Never taller than the screen it opens on (e.g. a 1280×800 display with the Dock).
+        if let visible = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame,
+           window.frame.height > visible.height {
+            let chrome = window.frame.height - window.contentLayoutRect.height
+            window.setContentSize(NSSize(width: 520, height: max(SettingsView.minHeight, visible.height - chrome)))
+        }
         window.center()
         return window
     }

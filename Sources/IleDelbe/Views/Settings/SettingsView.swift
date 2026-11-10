@@ -113,8 +113,14 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 800)
+        // The grouped Form scrolls: ~700 pt fits a 1280×800 display, and the window can be
+        // resized vertically (`SettingsWindowController`) down to the minimum or up to the full list.
+        .frame(width: 520)
+        .frame(minHeight: Self.minHeight, idealHeight: Self.idealHeight, maxHeight: .infinity)
     }
+
+    static let minHeight: CGFloat = 420
+    static let idealHeight: CGFloat = 700
 
     /// Switching to « Un écran au choix » with nothing stored picks a sensible screen right away.
     private var screenModeBinding: Binding<ScreenMode> {
