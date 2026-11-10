@@ -6,7 +6,7 @@ import os
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "io.github.ileDelbe", category: "app")
     private var nowPlaying: NowPlayingService?
-    private var controller: NotchWindowController?
+    private var coordinator: ScreenCoordinator?
     private var settingsWindow: SettingsWindowController?
     private var signalSources: [DispatchSourceSignal] = []
 
@@ -32,15 +32,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             calendar: CalendarService(),
             files: RecentFilesService(),
             settings: settings)
-        let controller = NotchWindowController(model: model)
+        let coordinator = ScreenCoordinator(model: model, settings: settings)
         let settingsWindow = SettingsWindowController(store: settings, loginItem: LoginItemService())
         self.settingsWindow = settingsWindow
         // Gear / « Réglages… »: close the panel, then show the settings window.
-        model.onOpenSettings = { [weak controller] in
-            controller?.closeNow()
+        model.onOpenSettings = { [weak coordinator] in
+            coordinator?.closeAll()
             settingsWindow.show()
         }
-        self.controller = controller
+        self.coordinator = coordinator
     }
 
     func applicationWillTerminate(_ notification: Notification) {

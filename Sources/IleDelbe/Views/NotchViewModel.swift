@@ -7,8 +7,8 @@ import SwiftUI
 
 @MainActor @Observable
 final class NotchViewModel {
-    var isOpen = false
-    var geometry: NotchGeometry?
+    /// The screen whose panel is open; nil when every notch is closed. At most one panel is open.
+    private(set) var openScreenID: String?
     /// True from the start of a file drag out of the panel until the mouse button is released.
     var isDraggingFile = false
     /// The page shown in the open panel; nil when no module is visible.
@@ -73,7 +73,7 @@ final class NotchViewModel {
             Task { @MainActor in
                 guard let self else { return }
                 self.observeRinging()
-                if self.isOpen { self.markTimerSeenIfShown() }
+                if self.openScreenID != nil { self.markTimerSeenIfShown() }
             }
         }
     }
@@ -92,30 +92,32 @@ final class NotchViewModel {
         return modules.first
     }
 
-    private var notchHeight: CGFloat { geometry?.notch.height ?? 32 }
+    func isOpen(on id: String) -> Bool { openScreenID == id }
 
-    /// Size of the open panel shape in the current state.
-    var panelSize: CGSize {
+    /// Size of the open panel shape in the current state, on the screen of `g`.
+    func panelSize(for g: NotchGeometry) -> CGSize {
         let s = settings.settings
         return PanelSizing.size(style: s.style, showsAll: showsAll, modules: modules, density: s.density,
-                                notchHeight: notchHeight)
+                                notchHeight: g.notch.height)
     }
 
     /// The open panel at the Normale size: the content is laid out on it, then scaled by
     /// `contentScale` (the notch band excluded), so Compacte is the same layout, smaller.
-    var unscaledPanelSize: CGSize {
+    func unscaledPanelSize(for g: NotchGeometry) -> CGSize {
         let s = settings.settings
         return PanelSizing.size(style: s.style, showsAll: showsAll, modules: modules, density: .normal,
-                                notchHeight: notchHeight)
+                                notchHeight: g.notch.height)
     }
 
     var contentScale: CGFloat { settings.settings.density == .compact ? PanelSizing.compactScale : 1 }
 
     /// Largest open size of the current style, density and modules: the window is framed on it
-    /// so switching pages or « Tout voir » never resizes the window.
-    var maxPanelSize: CGSize {
+    /// so switching pages or « Tout voir » never resizes the window. Per screen: each uses its own
+    /// notch (menu bar) height.
+    func maxPanelSize(for g: NotchGeometry) -> CGSize {
         let s = settings.settings
-        return PanelSizing.maxSize(style: s.style, modules: modules, density: s.density, notchHeight: notchHeight)
+        return PanelSizing.maxSize(style: s.style, modules: modules, density: s.density,
+                                   notchHeight: g.notch.height)
     }
 
     var closedLayout: ClosedLayout {
@@ -146,8 +148,9 @@ final class NotchViewModel {
     /// Callers clamp the product to 1.
     var haloOpacityScale: Double { settings.settings.haloIntensity / 0.6 }
 
-    /// Called by the window controller just before the panel opens.
-    func panelWillOpen(fromBubble: Bool) {
+    /// Called by the window controller of screen `id` when its panel opens. The caller makes
+    /// sure no other screen's panel is open.
+    func panelWillOpen(on id: String, fromBubble: Bool) {
         // An alert that auto-cleared (60 s) no longer forces the Minuteur tab.
         let unseen = timer.ringingUnseen && timer.timer.isRinging
         let available = modules
@@ -155,12 +158,15 @@ final class NotchViewModel {
             : PanelRules.defaultTab(timerRingingUnseen: unseen, isPlaying: isPlaying, lastUsed: lastUsedTab,
                                      forced: settings.settings.forcedModule, available: available)
         markTimerSeenIfShown()
+        openScreenID = id
     }
 
-    /// Called by the window controller just after the panel closed. An alert that was shown
+    /// Called by the window controller of screen `id` when its panel closed (or its screen left). An alert that was shown
     /// in the open panel counts as acknowledged (hover = seen), so the closed notch does not
     /// go back to the orange alert.
-    func panelDidClose() {
+    func panelDidClose(on id: String) {
+        guard openScreenID == id else { return }
+        openScreenID = nil
         showsAll = false
         if timer.timer.isRinging && !timer.ringingUnseen { timer.acknowledge() }
     }
