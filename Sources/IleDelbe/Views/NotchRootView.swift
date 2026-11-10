@@ -84,6 +84,12 @@ struct NotchRootView: View {
             ? accent.opacity(min(HaloStyle.closed.opacity * scale, 1)) : .clear
     }
 
+    /// « titre · artiste » (just the title when the artist is unknown).
+    static func titleLine(_ title: String, _ artist: String?) -> String {
+        guard let artist, !artist.isEmpty else { return title }
+        return "\(title) · \(artist)"
+    }
+
     @ViewBuilder
     private func content(geometry g: NotchGeometry, layout: ClosedLayout) -> some View {
         if model.isOpen {
@@ -99,7 +105,10 @@ struct NotchRootView: View {
             ClosedActivityView(layout: layout, wings: model.closedWings,
                                artworkData: model.nowPlaying.info?.artworkData,
                                isPlaying: model.isPlaying, timer: model.timer.timer, now: model.timer.now,
-                               glow: model.isPlaying ? model.accent : nil, haloScale: model.haloOpacityScale)
+                               glow: model.isPlaying ? model.accent : nil, haloScale: model.haloOpacityScale,
+                               title: model.nowPlaying.info.map { Self.titleLine($0.title, $0.artist) } ?? "",
+                               showsTitle: model.settings.settings.closedStyle == .title,
+                               motion: model.closedMotion)
                 .frame(height: g.notch.height)
                 .transition(.opacity)
         }
@@ -118,6 +127,40 @@ private extension NowPlayingInfo {
 #Preview("Closed playing") {
     ClosedActivityView(layout: .media, wings: .standard, artworkData: nil, isPlaying: true,
                        timer: CountdownTimer(), now: .now, glow: Color(red: 0.9, green: 0.3, blue: 0.5))
+        .frame(width: 220, height: 32)
+        .background(NotchShape(bottomRadius: 10).fill(.black))
+        .padding()
+}
+
+#Preview("Closed title, short") {
+    ClosedActivityView(layout: .media, wings: .title, artworkData: nil, isPlaying: true,
+                       timer: CountdownTimer(), now: .now, glow: nil,
+                       title: "Short · Artist", showsTitle: true)
+        .frame(width: 36 + 190 + 120, height: 32)
+        .background(NotchShape(bottomRadius: 10).fill(.black))
+        .padding()
+}
+
+#Preview("Closed title, long") {
+    ClosedActivityView(layout: .media, wings: .title, artworkData: nil, isPlaying: true,
+                       timer: CountdownTimer(), now: .now, glow: nil,
+                       title: "Une chanson avec un titre vraiment très long · Un artiste", showsTitle: true)
+        .frame(width: 36 + 190 + 120, height: 32)
+        .background(NotchShape(bottomRadius: 10).fill(.black))
+        .padding()
+}
+
+#Preview("Closed none") {
+    ClosedActivityView(layout: .plain, wings: .none, artworkData: nil, isPlaying: true,
+                       timer: CountdownTimer(), now: .now, glow: nil)
+        .frame(width: 190, height: 32)
+        .background(NotchShape(bottomRadius: 10).fill(.black))
+        .padding()
+}
+
+#Preview("Closed static equalizer") {
+    ClosedActivityView(layout: .media, wings: .standard, artworkData: nil, isPlaying: true,
+                       timer: CountdownTimer(), now: .now, glow: .pink, motion: false)
         .frame(width: 220, height: 32)
         .background(NotchShape(bottomRadius: 10).fill(.black))
         .padding()

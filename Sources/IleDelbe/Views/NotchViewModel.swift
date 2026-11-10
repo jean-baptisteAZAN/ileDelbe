@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 import IleDelbeCore
@@ -30,6 +31,10 @@ final class NotchViewModel {
     /// Set by the AppDelegate: close the panel and show the settings window.
     @ObservationIgnored var onOpenSettings: (() -> Void)?
 
+    /// macOS « Réduire les animations », kept in an observed property so `closedMotion` updates views.
+    private(set) var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    @ObservationIgnored private var reduceMotionObserver: (any NSObjectProtocol)?
+
     @ObservationIgnored private let defaults: UserDefaults
     private static let lastTabKey = "panel.lastTab"
 
@@ -48,7 +53,17 @@ final class NotchViewModel {
         lastUsedTab = defaults.string(forKey: Self.lastTabKey).flatMap(PanelTab.init(rawValue:)) ?? .music
         selectedTab = lastUsedTab
         observeRinging()
+        reduceMotionObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            }
+        }
     }
+
+    /// Whether anything may move in the closed notch (equalizer, title scroll, alert pulse).
+    var closedMotion: Bool { settings.settings.animateClosed && !reduceMotion }
 
     /// The timer rang while the open panel showed Minuteur: it has been seen. Re-arms itself.
     private func observeRinging() {

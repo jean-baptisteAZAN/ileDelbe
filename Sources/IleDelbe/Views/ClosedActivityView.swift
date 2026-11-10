@@ -14,6 +14,11 @@ struct ClosedActivityView: View {
     var glow: Color?
     /// Halo intensity multiplier (1 = the 0.2 look).
     var haloScale: Double = 1
+    /// « titre · artiste » for the title style.
+    var title: String = ""
+    var showsTitle = false
+    /// False: nothing moves (static equalizer, no scrolling, steady alert).
+    var motion = true
 
     var body: some View {
         switch layout {
@@ -25,8 +30,15 @@ struct ClosedActivityView: View {
                     .shadow(color: glow?.opacity(min(0.9 * haloScale, 1)) ?? .clear, radius: 11)
                     .frame(width: wings.left)
                 Spacer(minLength: 0)
-                EqualizerView(isPlaying: isPlaying, color: glow ?? .white)
-                    .frame(width: wings.right)
+                if showsTitle {
+                    MarqueeText(text: title, isActive: motion && isPlaying)
+                        .foregroundStyle(.white.opacity(0.9))
+                        .padding(.horizontal, 8)
+                        .frame(width: wings.right)
+                } else {
+                    EqualizerView(isPlaying: isPlaying, color: glow ?? .white, animated: motion)
+                        .frame(width: wings.right)
+                }
             }
         case .timer:
             HStack(spacing: 0) {
@@ -42,7 +54,7 @@ struct ClosedActivityView: View {
                     .frame(width: wings.right)
             }
         case .alert:
-            AlertPulse(wings: wings)
+            AlertPulse(wings: wings, pulses: motion)
         }
     }
 }
@@ -51,6 +63,7 @@ struct ClosedActivityView: View {
 /// (i.e. while the layout is `.alert`).
 private struct AlertPulse: View {
     var wings: ClosedWings
+    var pulses: Bool
     @State private var dim = false
 
     var body: some View {
@@ -66,8 +79,12 @@ private struct AlertPulse: View {
                 .frame(width: wings.right)
         }
         .foregroundStyle(Color.timerOrange)
-        .opacity(dim ? 0.35 : 1)
+        .opacity(pulses && dim ? 0.35 : 1)
+        .onChange(of: pulses) { _, on in
+            if on { withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { dim = true } }
+            else { withAnimation(nil) { dim = false } }
+        }
         .accessibilityLabel("Minuteur terminé")
-        .onAppear { withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { dim = true } }
+        .onAppear { guard pulses else { return }; withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { dim = true } }
     }
 }
