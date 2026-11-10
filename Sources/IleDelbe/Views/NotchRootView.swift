@@ -52,6 +52,7 @@ struct NotchRootView: View {
                     .clipShape(shape)
                     .offset(x: offsetX)
                     .contextMenu {
+                        Button("Réglages…") { model.onOpenSettings?() }
                         Button("Quitter") { NSApp.terminate(nil) }
                     }
                 if !isOpen && layout == .mediaAndBubble {

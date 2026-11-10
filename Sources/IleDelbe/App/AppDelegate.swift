@@ -7,6 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let log = Logger(subsystem: "io.github.ileDelbe", category: "app")
     private var nowPlaying: NowPlayingService?
     private var controller: NotchWindowController?
+    private var settingsWindow: SettingsWindowController?
     private var signalSources: [DispatchSourceSignal] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -21,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nowPlaying.start()
         self.nowPlaying = nowPlaying
 
+        let settings = SettingsStore()
         let model = NotchViewModel(
             nowPlaying: nowPlaying,
             volume: VolumeService(),
@@ -29,10 +31,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             halo: HaloService(nowPlaying: nowPlaying),
             calendar: CalendarService(),
             files: RecentFilesService(),
-            settings: SettingsStore())
+            settings: settings)
         let controller = NotchWindowController(model: model)
-        // Gear / « Réglages… »: close the panel now. The settings window comes in a later task.
-        model.onOpenSettings = { [weak controller] in controller?.closeNow() }
+        let settingsWindow = SettingsWindowController(store: settings, loginItem: LoginItemService())
+        self.settingsWindow = settingsWindow
+        // Gear / « Réglages… »: close the panel, then show the settings window.
+        model.onOpenSettings = { [weak controller] in
+            controller?.closeNow()
+            settingsWindow.show()
+        }
         self.controller = controller
     }
 
