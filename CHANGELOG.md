@@ -18,7 +18,7 @@ Styles and a settings window.
 ### Added
 
 - Three panel styles: Île, Grille (all modules at once) and Onglets. Île has a **Tout voir** button that shows the Grille layout.
-- Réglages window (gear in the open panel, or right-click the notch > **Réglages…**): style, accent (artwork, fixed tint or none) and halo intensity, module visibility and order, module opened first, closed-notch display (Pochette + égaliseur, Titre, Rien), **Animer l'encoche fermée**, hover-open delay, timer presets, panel size (Normale or Compacte), 3 or 5 recent files, and launch at login.
+- Réglages window (gear in the open panel, or right-click inside the open panel > **Réglages…**): style, accent (artwork, fixed tint or none) and halo intensity, module visibility and order, module opened first, closed-notch display (Pochette + égaliseur, Titre, Rien), **Animer l'encoche fermée**, hover-open delay, timer presets, panel size (Normale or Compacte), 3 or 5 recent files, and launch at login.
 - Closed-notch animations honor Reduce Motion.
 - README images for the three styles and the settings window.
 
