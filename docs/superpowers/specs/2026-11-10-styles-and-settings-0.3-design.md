@@ -80,7 +80,7 @@ Précisions :
   - Agenda masqué : pas de ligne « dans N min », et la demande d'accès au calendrier n'arrive jamais tant qu'il reste masqué.
   - Les quatre masqués : le panneau ouvert affiche « Aucun module affiché » et l'engrenage.
 - **À l'ouverture** : si le module forcé est masqué ensuite, le réglage repasse à Automatique. Le minuteur qui a sonné passe toujours avant le module forcé.
-- **Encoche fermée « Titre »** : aile gauche avec la pochette, aile droite plus large (environ 120 pt) avec « titre · artiste » qui défile lentement. Le défilement ne tourne que si le texte dépasse, et en reste à 15 images/s au plus, comme l'égaliseur. « Rien » : encoche nue pendant la lecture, sans halo ; la bulle du minuteur reste possible.
+- **Encoche fermée « Titre »** : aile gauche avec la pochette, aile droite plus large (environ 120 pt) avec « titre · artiste » qui défile lentement. Le défilement ne tourne que si le texte dépasse, et en reste à 15 images/s au plus, comme l'égaliseur. « Rien » : encoche nue pendant la lecture, sans halo. Un minuteur en cours s'affiche alors dans les ailes, comme sans musique (pas de bulle).
 - **Délai d'ouverture** : seul le délai d'ouverture est réglable. La fermeture reste à 0,30 s.
 - **Taille Compacte** : panneau et contenu réduits à environ 88 %, pour les trois styles.
 - **Fichiers 5** : Onglets et Grille montrent 5 fichiers ; Île en montre 3 et « +2 ».
@@ -136,7 +136,7 @@ Précisions :
 - **« Tout voir »** n'affiche que les modules visibles, avec les mêmes règles de taille que la Grille.
 - **Minuteur masqué qui sonne** : l'encoche fermée montre l'alerte comme en 0.2. À l'ouverture, le panneau affiche le Minuteur avec « OK » quel que soit le style, comme si le module était visible, jusqu'à ce qu'on valide. Il redevient masqué ensuite.
 - **Dernier module vu** : la clé 0.2 du dernier onglet est reprise telle quelle, partagée par tous les styles. Si ce module est masqué, on prend le premier module visible.
-- **Taille Compacte** : la fonction de taille multiplie les dimensions du panneau par 0,88, arrondies au point. Le contenu suit avec une mise à l'échelle. La zone de survol et les clics suivent la taille réduite. Les ailes et la bulle de l'encoche fermée ne changent pas.
+- **Taille Compacte** : la fonction de taille multiplie la largeur du panneau, et sa hauteur **sous la bande de l'encoche matérielle**, par 0,88, arrondies au point. La bande elle-même ne rétrécit pas : sinon le contenu passerait sous l'encoche. Le contenu suit avec une mise à l'échelle. La zone de survol et les clics suivent la taille réduite. Les ailes et la bulle de l'encoche fermée ne changent pas.
 - **Ailes en mode Titre** : 36 pt à gauche, 120 pt à droite. La bulle se place à droite de l'aile réellement dessinée. L'alerte du minuteur (110 pt de chaque côté) remplace le mode Titre tant qu'elle dure.
 - **Défilement** : il est reçu par la vue du panneau, qui est sous le pointeur et accepte les clics à ce moment-là. Le panneau ne devient jamais fenêtre principale. Si un écouteur local s'avère nécessaire, il est accepté. Pas d'écouteur global pour le défilement.
 - **Lancement à l'ouverture de session** : il se teste à la main sur la version signée installée dans `/Applications`. Avec un build ad hoc, la case peut refuser ou afficher « approbation requise », et c'est accepté.
