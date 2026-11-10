@@ -64,7 +64,8 @@ final class NotchViewModel {
         // An alert that auto-cleared (60 s) no longer forces the Minuteur tab.
         let unseen = timer.ringingUnseen && timer.timer.isRinging
         selectedTab = fromBubble ? .timer
-            : PanelRules.defaultTab(timerRingingUnseen: unseen, isPlaying: isPlaying, lastUsed: lastUsedTab)
+            : PanelRules.defaultTab(timerRingingUnseen: unseen, isPlaying: isPlaying, lastUsed: lastUsedTab,
+                                     forced: nil, available: PanelTab.allCases) ?? .music
         markTimerSeenIfShown()
     }
 

@@ -2,10 +2,24 @@ import Testing
 @testable import IleDelbeCore
 
 @Suite struct PanelRulesTests {
-    @Test func defaultTab() {
-        #expect(PanelRules.defaultTab(timerRingingUnseen: true, isPlaying: true, lastUsed: .files) == .timer)
-        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: true, lastUsed: .agenda) == .music)
-        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: false, lastUsed: .agenda) == .agenda)
+    @Test func defaultTabRules() {
+        let all: [PanelTab] = [.music, .timer, .agenda, .files]
+        #expect(PanelRules.defaultTab(timerRingingUnseen: true, isPlaying: true, lastUsed: .files, forced: .agenda, available: all) == .timer)
+        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: true, lastUsed: .files, forced: .agenda, available: all) == .agenda)
+        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: true, lastUsed: .agenda, forced: nil, available: all) == .music)
+        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: false, lastUsed: .agenda, forced: nil, available: all) == .agenda)
+        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: false, lastUsed: .agenda, forced: nil, available: []) == nil)
+    }
+
+    @Test func defaultTabFallsBackWhenLastUsedHidden() {
+        #expect(PanelRules.defaultTab(timerRingingUnseen: false, isPlaying: true, lastUsed: .agenda, forced: nil, available: [.files, .agenda].filter { $0 != .agenda }) == .files)
+    }
+
+    @Test func effectiveModulesAddsRingingHiddenTimer() {
+        let entries = [ModuleEntry(module: .music, visible: true), ModuleEntry(module: .timer, visible: false),
+                       ModuleEntry(module: .agenda, visible: true), ModuleEntry(module: .files, visible: false)]
+        #expect(PanelRules.effectiveModules(entries, timerRinging: false) == [.music, .agenda])
+        #expect(PanelRules.effectiveModules(entries, timerRinging: true) == [.music, .timer, .agenda])
     }
 
     @Test func closedLayout() {
