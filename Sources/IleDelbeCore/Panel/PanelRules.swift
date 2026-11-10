@@ -17,12 +17,25 @@ public enum PanelRules {
         entries.filter { $0.visible || ($0.module == .timer && timerRinging) }.map(\.module)
     }
 
-    /// alert if ringing; mediaAndBubble if playing && timerActive; media if playing; timer if timerActive; else plain
-    public static func closedLayout(isPlaying: Bool, timerActive: Bool, timerRinging: Bool) -> ClosedLayout {
+    /// alert if ringing; else, counting only visible modules: mediaAndBubble if playing && timerActive;
+    /// media if playing; timer if timerActive; else plain
+    public static func closedLayout(isPlaying: Bool, timerActive: Bool, timerRinging: Bool,
+                                    showsMusic: Bool, showsTimer: Bool) -> ClosedLayout {
         if timerRinging { return .alert }
-        if isPlaying && timerActive { return .mediaAndBubble }
-        if isPlaying { return .media }
-        if timerActive { return .timer }
+        let music = isPlaying && showsMusic
+        let timer = timerActive && showsTimer
+        if music && timer { return .mediaAndBubble }
+        if music { return .media }
+        if timer { return .timer }
         return .plain
+    }
+
+    public static func closedWings(_ layout: ClosedLayout, closedStyle: ClosedStyle) -> ClosedWings {
+        switch layout {
+        case .plain: return .none
+        case .media, .mediaAndBubble: return closedStyle == .title ? .title : .standard
+        case .timer: return .standard
+        case .alert: return .alert
+        }
     }
 }

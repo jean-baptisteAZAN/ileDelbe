@@ -22,12 +22,26 @@ import Testing
         #expect(PanelRules.effectiveModules(entries, timerRinging: true) == [.music, .timer, .agenda])
     }
 
-    @Test func closedLayout() {
-        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: true) == .alert)
-        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: false, timerRinging: true) == .alert)
-        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: false) == .mediaAndBubble)
-        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: false, timerRinging: false) == .media)
-        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: true, timerRinging: false) == .timer)
-        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: false, timerRinging: false) == .plain)
+    @Test func closedLayoutBasics() {
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: true, showsMusic: true, showsTimer: true) == .alert)
+        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: false, timerRinging: true, showsMusic: true, showsTimer: true) == .alert)
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: false, showsMusic: true, showsTimer: true) == .mediaAndBubble)
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: false, timerRinging: false, showsMusic: true, showsTimer: true) == .media)
+        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: true, timerRinging: false, showsMusic: true, showsTimer: true) == .timer)
+        #expect(PanelRules.closedLayout(isPlaying: false, timerActive: false, timerRinging: false, showsMusic: true, showsTimer: true) == .plain)
+    }
+
+    @Test func closedLayoutHiddenModules() {
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: false, showsMusic: false, showsTimer: true) == .timer)
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: false, showsMusic: true, showsTimer: false) == .media)
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: true, timerRinging: true, showsMusic: false, showsTimer: false) == .alert)
+        #expect(PanelRules.closedLayout(isPlaying: true, timerActive: false, timerRinging: false, showsMusic: false, showsTimer: false) == .plain)
+    }
+
+    @Test func closedWings() {
+        #expect(PanelRules.closedWings(.media, closedStyle: .title) == .title)
+        #expect(PanelRules.closedWings(.mediaAndBubble, closedStyle: .artworkEqualizer) == .standard)
+        #expect(PanelRules.closedWings(.alert, closedStyle: .title) == .alert)
+        #expect(PanelRules.closedWings(.plain, closedStyle: .title) == .none)
     }
 }

@@ -56,7 +56,7 @@ final class NotchViewModel {
 
     var closedLayout: ClosedLayout {
         PanelRules.closedLayout(isPlaying: isPlaying, timerActive: timer.timer.isActive,
-                                timerRinging: timer.timer.isRinging)
+                                timerRinging: timer.timer.isRinging, showsMusic: true, showsTimer: true)
     }
 
     /// Called by the window controller just before the panel opens.

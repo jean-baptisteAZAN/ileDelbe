@@ -15,28 +15,27 @@ import Testing
         #expect(make()?.notch == CGRect(x: 662, y: 950, width: 188, height: 32))
     }
 
-    @Test func closedActiveRect() {
-        #expect(make()?.closedActive == CGRect(x: 626, y: 950, width: 260, height: 32))
+    @Test func closedRects() {
+        let g = make()!
+        #expect(g.closedRect(.standard) == CGRect(x: 626, y: 950, width: 260, height: 32))
+        #expect(g.closedRect(.alert) == CGRect(x: 552, y: 950, width: 408, height: 32))
+        #expect(g.closedRect(.title) == CGRect(x: 626, y: 950, width: 344, height: 32))
+        #expect(g.closedRect(.none) == g.notch)
     }
 
-    @Test func closedAlertRect() {
-        let g = make()
-        #expect(g?.closedAlert == CGRect(x: 552, y: 950, width: 408, height: 32))
-        #expect(g.map { $0.expanded.contains($0.closedAlert) } == true)
+    @Test func openRect() {
+        #expect(make()!.openRect(size: CGSize(width: 548, height: 236)) == CGRect(x: 482, y: 746, width: 548, height: 236))
     }
 
-    @Test func expandedRect() {
-        #expect(make()?.expanded == CGRect(x: 482, y: 746, width: 548, height: 236))
-    }
-
-    @Test func bubbleRect() {
-        #expect(make()?.bubble == CGRect(x: 894, y: 950, width: 76, height: 32))
-        #expect(make()?.expanded.contains(make()!.bubble) == true)
+    @Test func bubbleFollowsActualWing() {
+        let g = make()!
+        #expect(g.bubbleRect(after: g.closedRect(.standard)) == CGRect(x: 894, y: 950, width: 76, height: 32))
+        #expect(g.bubbleRect(after: g.closedRect(.title)).minX == 978)
     }
 
     @Test func nonZeroOrigin() {
         #expect(make(originX: 1512)?.notch == CGRect(x: 2174, y: 950, width: 188, height: 32))
-        #expect(make(originX: 1512)?.expanded == CGRect(x: 1994, y: 746, width: 548, height: 236))
+        #expect(make(originX: 1512)?.openRect(size: CGSize(width: 548, height: 236)) == CGRect(x: 1994, y: 746, width: 548, height: 236))
     }
 
     @Test func noNotch() {

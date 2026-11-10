@@ -248,9 +248,9 @@ private struct Scene: View {
     @ViewBuilder
     private func notch(_ g: NotchGeometry) -> some View {
         let (isOpen, layout) = state
-        let size: CGSize = isOpen ? g.expanded.size
+        let size: CGSize = isOpen ? g.openRect(size: CGSize(width: 548, height: 236)).size
             : layout == .plain ? g.notch.size
-            : layout == .alert ? g.closedAlert.size : g.closedActive.size
+            : layout == .alert ? g.closedRect(.alert).size : g.closedRect(.standard).size
         let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
         let style = isOpen ? HaloStyle.open : HaloStyle.closed
         ZStack(alignment: .top) {
@@ -263,7 +263,7 @@ private struct Scene: View {
                 .clipShape(shape)
             if !isOpen && layout == .mediaAndBubble {
                 BubbleView(timer: sample.timer, now: sample.now)
-                    .offset(x: g.bubble.midX - g.expanded.midX)
+                    .offset(x: g.bubbleRect(after: g.closedRect(.standard)).midX - g.openRect(size: CGSize(width: 548, height: 236)).midX)
             }
         }
         .frame(maxWidth: .infinity, alignment: .top)

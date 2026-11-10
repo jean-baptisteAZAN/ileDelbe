@@ -48,7 +48,7 @@ struct NotchRootView: View {
                     }
                 if !isOpen && layout == .mediaAndBubble {
                     BubbleView(timer: model.timer.timer, now: model.timer.now)
-                        .offset(x: geometry.bubble.midX - geometry.expanded.midX)
+                        .offset(x: geometry.bubbleRect(after: geometry.closedRect(.standard)).midX - geometry.openRect(size: CGSize(width: 548, height: 236)).midX)
                         .transition(.scale(scale: 0.6, anchor: .leading)
                             .combined(with: .offset(x: -30))
                             .combined(with: .opacity))
@@ -63,11 +63,11 @@ struct NotchRootView: View {
     }
 
     private func shapeSize(_ g: NotchGeometry, layout: ClosedLayout) -> CGSize {
-        if model.isOpen { return g.expanded.size }
+        if model.isOpen { return g.openRect(size: CGSize(width: 548, height: 236)).size }
         switch layout {
         case .plain: return g.notch.size
-        case .media, .mediaAndBubble, .timer: return g.closedActive.size
-        case .alert: return g.closedAlert.size
+        case .media, .mediaAndBubble, .timer: return g.closedRect(.standard).size
+        case .alert: return g.closedRect(.alert).size
         }
     }
 

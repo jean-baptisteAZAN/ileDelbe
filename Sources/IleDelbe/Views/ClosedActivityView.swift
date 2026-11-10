@@ -18,23 +18,23 @@ struct ClosedActivityView: View {
             HStack(spacing: 0) {
                 ArtworkView(data: artworkData, size: 20, cornerRadius: 4)
                     .shadow(color: glow?.opacity(0.9) ?? .clear, radius: 11)
-                    .frame(width: NotchGeometry.closedActiveWing)
+                    .frame(width: ClosedWings.standard.left)
                 Spacer(minLength: 0)
                 EqualizerView(isPlaying: isPlaying)
-                    .frame(width: NotchGeometry.closedActiveWing)
+                    .frame(width: ClosedWings.standard.left)
             }
         case .timer:
             HStack(spacing: 0) {
                 Image(systemName: "timer")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.timerOrange)
-                    .frame(width: NotchGeometry.closedActiveWing)
+                    .frame(width: ClosedWings.standard.left)
                 Spacer(minLength: 0)
                 Text(TimerText.string(timer.remaining(at: now)))
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(Color.timerOrange)
                     .minimumScaleFactor(0.8)
-                    .frame(width: NotchGeometry.closedActiveWing)
+                    .frame(width: ClosedWings.standard.left)
             }
         case .alert:
             AlertPulse()
@@ -51,13 +51,13 @@ private struct AlertPulse: View {
         HStack(spacing: 0) {
             Image(systemName: "bell.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .frame(width: NotchGeometry.alertWing)
+                .frame(width: ClosedWings.alert.left)
             Spacer(minLength: 0)
             Text("Minuteur terminé")
                 .font(.system(size: 11, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
-                .frame(width: NotchGeometry.alertWing)
+                .frame(width: ClosedWings.alert.left)
         }
         .foregroundStyle(Color.timerOrange)
         .opacity(dim ? 0.35 : 1)

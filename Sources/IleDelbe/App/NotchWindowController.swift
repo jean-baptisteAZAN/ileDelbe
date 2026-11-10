@@ -75,7 +75,7 @@ final class NotchWindowController {
         model.geometry = geometry
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
-        let e = geometry.expanded
+        let e = geometry.openRect(size: CGSize(width: 548, height: 236))
         // The window extends past `expanded` only so the open halo is not cut by the window edge.
         // That margin never takes clicks: see `updateMousePassThrough`.
         let m = HaloStyle.windowMargin
@@ -130,15 +130,15 @@ final class NotchWindowController {
         if model.isDraggingFile, NSEvent.pressedMouseButtons & 1 == 0 { model.isDraggingFile = false }
         var inTrigger: Bool
         if hover.isOpen {
-            inTrigger = Self.contains(geometry.expanded, mouse)
+            inTrigger = Self.contains(geometry.openRect(size: CGSize(width: 548, height: 236)), mouse)
         } else {
             let layout = model.closedLayout
             let main: CGRect = switch layout {
             case .plain: geometry.notch
-            case .media, .mediaAndBubble, .timer: geometry.closedActive  // the visible pill
-            case .alert: geometry.closedAlert
+            case .media, .mediaAndBubble, .timer: geometry.closedRect(.standard)  // the visible pill
+            case .alert: geometry.closedRect(.alert)
             }
-            let inBubble = layout == .mediaAndBubble && Self.contains(geometry.bubble, mouse)
+            let inBubble = layout == .mediaAndBubble && Self.contains(geometry.bubbleRect(after: geometry.closedRect(.standard)), mouse)
             inTrigger = Self.contains(main, mouse) || inBubble
             if inTrigger { pointerInBubble = inBubble }
         }
@@ -146,7 +146,7 @@ final class NotchWindowController {
         let now = ProcessInfo.processInfo.systemUptime
         hover.update(inTrigger: inTrigger, now: now)
         apply()
-        updateMousePassThrough(inExpanded: Self.contains(geometry.expanded, mouse))
+        updateMousePassThrough(inExpanded: Self.contains(geometry.openRect(size: CGSize(width: 548, height: 236)), mouse))
 
         deadlineWork?.cancel()
         deadlineWork = nil
