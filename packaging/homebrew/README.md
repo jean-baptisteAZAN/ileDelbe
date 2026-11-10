@@ -10,7 +10,7 @@ brew trust jean-baptisteAZAN/tap   # recent Homebrew asks you to trust third-par
 brew install --cask iledelbe
 ```
 
-Requirements: a MacBook with a notch (Apple silicon), macOS 15.4 or later.
+Requirements: a Mac with Apple silicon, macOS 15.4 or later (a notch is optional: other screens get a virtual one).
 
 ## Update
 

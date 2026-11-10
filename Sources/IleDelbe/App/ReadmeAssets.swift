@@ -40,6 +40,9 @@ enum ReadmeAssets {
                 try write(Scene(mode: mode, canvas: size, sample: s), size: size, to: url)
                 print("wrote \(url.path)")
             }
+            let external = directory.appendingPathComponent("external-screen.png")
+            try write(ExternalScreenScene(sample: s), size: ExternalScreenScene.size, to: external)
+            print("wrote \(external.path)")
             let settings = directory.appendingPathComponent("settings.png")
             try write(SettingsSnapshot(), size: SettingsSnapshot.size, to: settings)
             print("wrote \(settings.path)")
@@ -354,6 +357,62 @@ private struct Scene: View {
     }
 }
 
+// MARK: - External screen
+
+/// Wide external-screen menu bar with the virtual notch, in two stacked states: the thin idle bar,
+/// then the media pill. Shapes come from `ClosedDrawing` on a `NotchGeometry.virtual`, like the app.
+@MainActor
+private struct ExternalScreenScene: View {
+    static let size = CGSize(width: 900, height: 120)
+    static let menuBarHeight: CGFloat = 24
+    let sample: Sample
+
+    var body: some View {
+        VStack(spacing: 0) {
+            strip(wings: .none, layout: .plain)
+            strip(wings: PanelRules.closedWings(.media, closedStyle: .artworkEqualizer), layout: .media)
+        }
+        .frame(width: Self.size.width, height: Self.size.height)
+        .background(LinearGradient(colors: [Color(red: 0.07, green: 0.08, blue: 0.2),
+                                            Color(red: 0.42, green: 0.2, blue: 0.32)],
+                                   startPoint: .top, endPoint: .bottom))
+    }
+
+    private func strip(wings: ClosedWings, layout: ClosedLayout) -> some View {
+        let frame = CGRect(x: 0, y: 0, width: Self.size.width, height: Self.size.height / 2)
+        let g = NotchGeometry.virtual(screenFrame: frame, menuBarHeight: Self.menuBarHeight)
+        let d = ClosedDrawing(geometry: g, wings: wings)
+        let shape = NotchShape(bottomRadius: d.radius)
+        return ZStack(alignment: .top) {
+            HStack(spacing: 16) {
+                Text("Éditeur").fontWeight(.bold)
+                Text("Fichier")
+                Spacer()
+                Image(systemName: "wifi")
+                Text("lun. 09:48")
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(.white.opacity(0.92))
+            .padding(.horizontal, 16)
+            .frame(height: Self.menuBarHeight)
+            .frame(maxWidth: .infinity)
+            .background(Color.black.opacity(0.28))
+            shape.fill(Color.black)
+                .overlay(alignment: .top) {
+                    if layout != .plain {
+                        ClosedActivityView(layout: layout, wings: wings, artworkData: sample.info.artworkData,
+                                           isPlaying: true, timer: sample.timer, now: sample.now, glow: sample.glow)
+                            .frame(height: g.notch.height)
+                    }
+                }
+                .frame(width: d.size.width, height: d.size.height)
+                .clipShape(shape)
+                .offset(x: d.offsetX)
+        }
+        .frame(width: Self.size.width, height: Self.size.height / 2, alignment: .top)
+    }
+}
+
 // MARK: - Settings window
 
 /// Static look-alike of `SettingsView` with the default settings. `ImageRenderer` cannot draw the
@@ -361,12 +420,16 @@ private struct Scene: View {
 /// the same rows with the same French labels, in the dark grouped style.
 @MainActor
 private struct SettingsSnapshot: View {
-    static let size = CGSize(width: 520, height: 620)
+    static let size = CGSize(width: 520, height: 690)
     private let s = AppSettings.default
     private let blue = Color(red: 0.04, green: 0.52, blue: 1)
 
     var body: some View {
         VStack(spacing: 14) {
+            header("Écrans")
+            group {
+                row("Afficher l'encoche sur") { menu("Écran intégré") }
+            }
             group {
                 segmented("Style", ["Île", "Grille", "Onglets"], selected: s.style == .island ? 0 : 1)
                 segmented("Couleur", ["Pochette", "Fixe", "Aucune"], selected: 0)

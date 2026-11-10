@@ -74,8 +74,7 @@ Update with `brew upgrade --cask iledelbe`. Uninstall with `brew uninstall --cas
 
 ### Requirements
 
-- A MacBook with a notch (Apple silicon), running **macOS 15.4 or later**.
-- External screens and Macs without a notch are not supported.
+- A Mac (Apple silicon) running **macOS 15.4 or later**. A notched MacBook gets the real notch; any other screen gets a virtual one (see [External screens](#external-screens)).
 
 ## First launch and permissions
 
@@ -106,8 +105,22 @@ Open **Réglages ileDelbe** with the gear in the open panel, or right-click insi
 - **Modules.** Show or hide *Musique*, *Minuteur*, *Agenda* and *Fichiers*, reorder them, and choose which one opens first (**À l'ouverture**, *Automatique* by default).
 - **Encoche fermée.** What the notch shows while music plays: *Pochette + égaliseur*, *Titre* or *Rien*. **Animer l'encoche fermée** turns the equalizer and the scrolling title on or off; with **Reduce Motion** enabled in System Settings > Accessibility > Display, they stay still whatever this option says. **Délai d'ouverture au survol** sets how long you hover before the panel opens.
 - **Minuteur.** The three preset durations (1 to 180 min).
+- **Écrans.** Where the notch appears: *Écran intégré*, *Écran principal*, *Un écran au choix* or *Tous les écrans*.
 - **Panneau.** *Normale* or *Compacte* size, and 3 or 5 recent files.
 - **Lancer à l'ouverture de session.** Starts ileDelbe at login.
+
+## External screens
+
+ileDelbe also works on external screens and on Macs without a notch. There, it draws a virtual notch at the top center of the menu bar, using the menu bar height of that screen. Pick where it appears in the **Écrans** section of the settings, with **Afficher l'encoche sur**:
+
+- **Écran intégré** (default). The built-in screen only. With the lid closed, or no built-in screen, the notch moves to the main screen.
+- **Écran principal**. The screen that has the menu bar.
+- **Un écran au choix**. A screen you pick from the list. While it is unplugged, the notch falls back to another screen.
+- **Tous les écrans**. A notch on every screen. Alerts (timer end, meeting) show on all of them; only one panel is open at a time.
+
+<img src="docs/assets/external-screen.png" alt="Virtual notch on an external screen: a thin idle bar, then the media pill with artwork and equalizer" width="100%">
+
+At rest, a virtual notch is only a thin bar, so it stays out of the way. It grows into a pill when something happens (music, timer, alert), and opens into the panel when you hover it. Only the drawn shape reacts to the pointer, and ileDelbe never takes focus.
 
 ## Build from source
 
@@ -155,7 +168,7 @@ log stream --predicate 'subsystem == "io.github.ileDelbe"'
 macOS ties permissions to the app's signature. After an update, or after each `make app` for a local build, the old grant can go stale. Open System Settings > Privacy & Security > Calendars, remove ileDelbe, then open the Agenda tab again to get a new prompt.
 
 **Nothing happens on my Mac.**
-ileDelbe needs a built-in screen with a notch. Macs without a notch and external screens are not supported.
+By default ileDelbe shows its notch on the built-in screen. If you only use an external screen, or the lid is closed, it uses the main screen instead. Check **Écrans** in the settings (see [External screens](#external-screens)).
 
 **Music controls show "Rien en lecture" while something plays.**
 See [Known risk](#known-risk-mediaremote) and check the logs. Please open an issue with your macOS version.
