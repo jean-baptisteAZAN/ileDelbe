@@ -45,7 +45,9 @@ ileDelbe is a small, native macOS agent app (SwiftUI, no Dock icon, no menu bar 
 ### Homebrew (recommended)
 
 ```sh
-brew install --cask jean-baptisteAZAN/tap/iledelbe
+brew tap jean-baptisteAZAN/tap
+brew trust jean-baptisteAZAN/tap   # recent Homebrew asks you to trust third-party taps once
+brew install --cask iledelbe
 ```
 
 Update with `brew upgrade --cask iledelbe`. Uninstall with `brew uninstall --cask iledelbe` (add `--zap` to also remove its preferences).

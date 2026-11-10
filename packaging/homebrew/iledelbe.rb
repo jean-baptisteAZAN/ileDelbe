@@ -8,7 +8,7 @@ cask "iledelbe" do
   homepage "https://github.com/jean-baptisteAZAN/ileDelbe"
 
   depends_on arch: :arm64
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "IleDelbe.app"
 

@@ -14,7 +14,8 @@ final class HaloService {
     @ObservationIgnored private var cache: (artwork: Data, glow: Color?)?
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    private nonisolated static let context = CIContext(options: [.workingColorSpace: NSNull()])
+    // CIContext is thread-safe (Apple docs); it is not marked Sendable in the macOS 15 SDK.
+    private nonisolated(unsafe) static let context = CIContext(options: [.workingColorSpace: NSNull()])
 
     init(nowPlaying: NowPlayingService) {
         self.nowPlaying = nowPlaying

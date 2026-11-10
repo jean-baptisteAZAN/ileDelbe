@@ -5,13 +5,8 @@ Homebrew tap for [ileDelbe](https://github.com/jean-baptisteAZAN/ileDelbe), a Dy
 ## Install
 
 ```sh
-brew install --cask jean-baptisteAZAN/tap/iledelbe
-```
-
-This is the same as:
-
-```sh
 brew tap jean-baptisteAZAN/tap
+brew trust jean-baptisteAZAN/tap   # recent Homebrew asks you to trust third-party taps once
 brew install --cask iledelbe
 ```
 
