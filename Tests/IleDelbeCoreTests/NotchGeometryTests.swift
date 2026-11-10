@@ -111,6 +111,12 @@ import Testing
         #expect(NotchGeometry.menuBarHeight(screenFrame: s, visibleFrame: s, fallback: 24) == 24)
         #expect(NotchGeometry.menuBarHeight(screenFrame: s, visibleFrame: CGRect(x: 0, y: 0, width: 100, height: 70), fallback: 24) == 30)
     }
+    @Test func virtualBubble() {
+        let bubble = ext.bubbleRect(after: ext.closedRect(.standard))
+        #expect(bubble == CGRect(x: 2926, y: 1416, width: 76, height: 24))
+        let w = ext.windowFrame(openSize: CGSize(width: 460, height: 120), openMargin: (horizontal: 35, bottom: 48), closedMargin: 11)
+        #expect(w.contains(bubble))
+    }
     @Test func virtualWindowFrameCoversPill() {
         let w = ext.windowFrame(openSize: CGSize(width: 460, height: 120), openMargin: (horizontal: 35, bottom: 48), closedMargin: 11)
         #expect(w.contains(ext.closedRect(.alert)) && w.contains(ext.idleBarRect))

@@ -12,6 +12,10 @@ import Testing
         var l = lg; l.isMain = false
         #expect(ScreenSelection.targets([l], mode: .main, chosenID: nil) == ["C"])
     }
+    @Test func noMainFlagAmongSeveralUsesFirst() {
+        var d = dell; d.isMain = false
+        #expect(ScreenSelection.targets([lg, d, mac], mode: .main, chosenID: nil) == ["C"])
+    }
     @Test func chosenFallsBackAndReturns() {
         #expect(ScreenSelection.targets([mac, dell, lg], mode: .chosen, chosenID: "C") == ["C"])
         #expect(ScreenSelection.targets([mac, dell], mode: .chosen, chosenID: "C") == ["A"])
