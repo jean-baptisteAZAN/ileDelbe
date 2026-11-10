@@ -94,7 +94,7 @@ struct NotchRootView: View {
                                infoLine: model.settings.settings.visibleModules.contains(.agenda)
                                    ? model.calendar.infoLine : nil,
                                onSelect: { model.select($0) })
-                    pane(tab)
+                    ModuleView(module: tab, size: .full, model: model)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 } else {
                     Text("Aucun module affiché")
@@ -115,45 +115,6 @@ struct NotchRootView: View {
                                glow: model.isPlaying ? model.accent : nil, haloScale: model.haloOpacityScale)
                 .frame(height: g.notch.height)
                 .transition(.opacity)
-        }
-    }
-
-    @ViewBuilder
-    private func pane(_ tab: PanelTab) -> some View {
-        switch tab {
-        case .music:
-            MusicPaneView(
-                info: model.nowPlaying.info,
-                history: model.history.history.recent(excluding: model.nowPlaying.info),
-                glow: model.accent,
-                haloScale: model.haloOpacityScale,
-                volume: model.volume.volume,
-                isVolumeSettable: model.volume.isSettable,
-                onCommand: { model.nowPlaying.send($0) },
-                onVolume: { model.volume.set($0) })
-        case .timer:
-            let timer = model.timer
-            TimerPaneView(
-                timer: timer.timer, now: timer.now,
-                presetsMinutes: model.settings.settings.timerPresetsMinutes,
-                onStart: { timer.start($0) }, onAddMinute: { timer.addMinute() },
-                onPause: { timer.pause() }, onResume: { timer.resume() },
-                onStop: { timer.stop() }, onAcknowledge: { timer.acknowledge() })
-        case .agenda:
-            let calendar = model.calendar
-            AgendaPaneView(
-                access: calendar.access, events: calendar.upcoming, now: Date(),
-                onAppear: { calendar.requestAccessIfNeeded() },
-                onJoin: { NSWorkspace.shared.open($0) },
-                onOpenSettings: { calendar.openPrivacySettings() })
-        case .files:
-            let files = model.files
-            FilesPaneView(
-                files: files.files, home: FileManager.default.homeDirectoryForCurrentUser,
-                count: model.settings.settings.recentFileCount,
-                icon: { files.icon(for: $0) }, now: Date(),
-                onOpen: { files.open($0) },
-                onDragStart: { model.isDraggingFile = true })
         }
     }
 }

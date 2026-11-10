@@ -21,50 +21,17 @@ struct ExpandedPlayerView: View {
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
                     ArtworkView(data: info.artworkData, size: 64, cornerRadius: 10)
-                        .shadow(color: glow?.opacity(min(0.8 * haloScale, 1)) ?? .clear, radius: 35, y: 13)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(info.title)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .lineLimit(1)
-                        if let artist = info.artist, !artist.isEmpty {
-                            Text(artist)
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
+                        .artworkGlow(glow, haloScale: haloScale)
+                    TrackTitleView(info: info)
                     Spacer(minLength: 0)
-                    controls(isPlaying: info.isPlaying)
+                    TransportControls(isPlaying: info.isPlaying, onCommand: onCommand)
                 }
                 ScrubberView(info: info, isOpen: isOpen, fill: glow ?? .white) { onCommand(.seek(to: $0)) }
                 volumeRow
             }
         } else {
-            Text("Rien en lecture")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ModuleEmptyText("Rien en lecture")
         }
-    }
-
-    private func controls(isPlaying: Bool) -> some View {
-        HStack(spacing: 14) {
-            button("backward.fill", size: 14) { onCommand(.previous) }
-            button(isPlaying ? "pause.fill" : "play.fill", size: 20) { onCommand(.togglePlayPause) }
-            button("forward.fill", size: 14) { onCommand(.next) }
-        }
-    }
-
-    private func button(_ symbol: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size))
-                .foregroundStyle(.white)
-                .frame(width: 28, height: 28)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 
     private var volumeRow: some View {
