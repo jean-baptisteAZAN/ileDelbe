@@ -30,7 +30,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     private func makeWindow() -> NSWindow {
         let host = NSHostingController(rootView: SettingsView(store: store, loginItem: loginItem))
-        let window = NSWindow(contentViewController: host)
+        let window = SettingsWindow(contentViewController: host)
         window.title = "Réglages ileDelbe"
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
@@ -49,5 +49,22 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         } else {
             NSApp.deactivate()
         }
+    }
+}
+
+/// The app has no main menu (accessory app), so ⌘W and Esc are handled here. Both go through
+/// `performClose`, so `windowWillClose` still hands focus back.
+private final class SettingsWindow: NSWindow {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+           event.charactersIgnoringModifiers == "w" {
+            performClose(nil)
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+
+    override func cancelOperation(_ sender: Any?) {
+        performClose(nil)
     }
 }
