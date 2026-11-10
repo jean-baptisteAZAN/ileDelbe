@@ -66,6 +66,7 @@ C'est le seul cas, avec « Rejoindre » et l'ouverture d'un fichier, où ileDelb
 | Modules | afficher/masquer chacun des 4, et les réordonner | les 4, ordre Musique, Minuteur, Agenda, Fichiers |
 | À l'ouverture | Automatique, ou toujours un module visible | Automatique |
 | Encoche fermée pendant la lecture | Pochette + égaliseur, Titre, Rien | Pochette + égaliseur |
+| Animer l'encoche fermée | oui / non | oui |
 | Délai d'ouverture au survol | 0,05 à 0,60 s, par pas de 0,05 | 0,15 s |
 | Durées du minuteur | trois durées, 1 à 180 min chacune | 5, 10, 25 |
 | Taille du panneau | Normale, Compacte | Normale |
@@ -81,6 +82,7 @@ Précisions :
   - Les quatre masqués : le panneau ouvert affiche « Aucun module affiché » et l'engrenage.
 - **À l'ouverture** : si le module forcé est masqué ensuite, le réglage repasse à Automatique. Le minuteur qui a sonné passe toujours avant le module forcé.
 - **Encoche fermée « Titre »** : aile gauche avec la pochette, aile droite plus large (environ 120 pt) avec « titre · artiste » qui défile lentement. Le défilement ne tourne que si le texte dépasse, et en reste à 15 images/s au plus, comme l'égaliseur. « Rien » : encoche nue pendant la lecture, sans halo. Un minuteur en cours s'affiche alors dans les ailes, comme sans musique (pas de bulle).
+- **Animer l'encoche fermée** (demandé par l'utilisateur) : décoché, rien ne bouge dans l'encoche fermée. L'égaliseur affiche des barres fixes, et le titre ne défile pas (il est tronqué). L'alerte du minuteur ne pulse pas. Le réglage « Réduire les animations » de macOS (Accessibilité) a le même effet, quel que soit ce réglage. Le panneau ouvert n'est pas concerné.
 - **Délai d'ouverture** : seul le délai d'ouverture est réglable. La fermeture reste à 0,30 s.
 - **Taille Compacte** : panneau et contenu réduits à environ 88 %, pour les trois styles.
 - **Fichiers 5** : Onglets et Grille montrent 5 fichiers ; Île en montre 3 et « +2 ».
