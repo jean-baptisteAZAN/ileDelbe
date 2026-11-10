@@ -45,6 +45,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var recentFileCount: Int = 3
     public var screenMode: ScreenMode = .builtIn
     public var chosenScreenID: String? = nil
+    /// The chosen screen's name when it was picked, shown while it is unplugged. Display only.
+    public var chosenScreenName: String? = nil
 
     public static let `default` = AppSettings()
     public static let storageKey = "settings.v1"
@@ -55,7 +57,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case style, accent, fixedTint, haloIntensity, modules, forcedModule, closedStyle
         case animateClosed, openDelay, timerPresetsMinutes, density, recentFileCount
-        case screenMode, chosenScreenID
+        case screenMode, chosenScreenID, chosenScreenName
     }
 
     /// Each field falls back to its default on its own, so one bad value never discards the rest.
@@ -76,6 +78,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         recentFileCount = (try? c.decodeIfPresent(Int.self, forKey: .recentFileCount)) ?? d.recentFileCount
         screenMode = (try? c.decodeIfPresent(ScreenMode.self, forKey: .screenMode)) ?? d.screenMode
         chosenScreenID = (try? c.decodeIfPresent(String.self, forKey: .chosenScreenID)) ?? d.chosenScreenID
+        chosenScreenName = (try? c.decodeIfPresent(String.self, forKey: .chosenScreenName)) ?? d.chosenScreenName
         self = normalized()
     }
 

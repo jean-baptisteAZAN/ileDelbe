@@ -13,8 +13,14 @@ import Foundation
     }
     @Test func screenDefaultsAndFallback() {
         #expect(AppSettings.default.screenMode == .builtIn && AppSettings.default.chosenScreenID == nil)
+        #expect(AppSettings.default.chosenScreenName == nil)
         let s = AppSettings.load(Data(#"{"screenMode":"mirror","chosenScreenID":"C","style":"grid"}"#.utf8))
         #expect(s.screenMode == .builtIn && s.chosenScreenID == "C" && s.style == .grid)
+        #expect(s.chosenScreenName == nil)  // missing field
+        let bad = AppSettings.load(Data(#"{"chosenScreenName":42,"chosenScreenID":"C"}"#.utf8))
+        #expect(bad.chosenScreenName == nil && bad.chosenScreenID == "C")  // invalid field alone falls back
+        let named = AppSettings.load(Data(#"{"chosenScreenName":"DELL U2723QE"}"#.utf8))
+        #expect(named.chosenScreenName == "DELL U2723QE")
     }
     @Test func roundTrip() {
         var s = AppSettings.default; s.style = .grid; s.fixedTint = .violet; s.accent = .fixed

@@ -14,7 +14,8 @@ struct SettingsView: View {
     var body: some View {
         let s = store.settings
         Form {
-            ScreensSection(mode: screenModeBinding, chosenID: bind(\.chosenScreenID), choices: screens.choices)
+            ScreensSection(mode: screenModeBinding, chosenID: chosenIDBinding,
+                           chosenName: s.chosenScreenName, choices: screens.choices)
 
             Section {
                 Picker("Style", selection: bind(\.style)) {
@@ -123,6 +124,18 @@ struct SettingsView: View {
                     if mode == .chosen, store.settings.chosenScreenID == nil,
                        let first = ScreenChoice.defaultChoice(in: screens.choices) {
                         store.settings.chosenScreenID = first.id
+                        store.settings.chosenScreenName = first.label
+                    }
+                })
+    }
+
+    /// Picking a screen also stores its name, shown as « <nom> (débranché) » while it is unplugged.
+    private var chosenIDBinding: Binding<String?> {
+        Binding(get: { store.settings.chosenScreenID },
+                set: { id in
+                    store.settings.chosenScreenID = id
+                    if let choice = screens.choices.first(where: { $0.id == id }) {
+                        store.settings.chosenScreenName = choice.label
                     }
                 })
     }
@@ -209,6 +222,8 @@ final class ScreensModel {
 struct ScreensSection: View {
     @Binding var mode: ScreenMode
     @Binding var chosenID: String?
+    /// The stored name of the chosen screen (`AppSettings.chosenScreenName`), for the unplugged label.
+    let chosenName: String?
     let choices: [ScreenChoice]
 
     private var chosenIsConnected: Bool { chosenID.map { id in choices.contains { $0.id == id } } ?? true }
@@ -224,7 +239,7 @@ struct ScreensSection: View {
             if mode == .chosen {
                 Picker("Écran", selection: $chosenID) {
                     if !chosenIsConnected {
-                        Text("<nom inconnu> (débranché)").tag(chosenID)
+                        Text("\(chosenName ?? "<nom inconnu>") (débranché)").tag(chosenID)
                     }
                     ForEach(choices) { Text($0.label).tag(String?.some($0.id)) }
                 }
@@ -242,7 +257,7 @@ struct ScreensSection: View {
     @Previewable @State var mode = ScreenMode.chosen
     @Previewable @State var id: String? = "b"
     Form {
-        ScreensSection(mode: $mode, chosenID: $id, choices: [
+        ScreensSection(mode: $mode, chosenID: $id, chosenName: "DELL U2723QE", choices: [
             ScreenChoice(id: "a", label: "Écran intégré", isBuiltIn: true),
             ScreenChoice(id: "b", label: "DELL U2723QE", isBuiltIn: false),
             ScreenChoice(id: "c", label: "DELL U2723QE (2)", isBuiltIn: false)])
