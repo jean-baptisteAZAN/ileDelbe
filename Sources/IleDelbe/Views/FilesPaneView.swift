@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 struct FilesPaneView: View {
     var files: [RecentFile]
     var home: URL
+    /// How many files to show (setting: 3 or 5). `files` may hold more.
+    var count: Int = 3
     var icon: (RecentFile) -> NSImage
     var now: Date
     var onOpen: (RecentFile) -> Void
@@ -23,10 +25,10 @@ struct FilesPaneView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 HStack(spacing: 8) {
-                    ForEach(files.prefix(3)) { file in
+                    ForEach(files.prefix(count)) { file in
                         card(file)
                     }
-                    if files.count < 3 { Spacer(minLength: 0) }
+                    if files.count < count { Spacer(minLength: 0) }
                 }
                 Spacer(minLength: 0)
             }

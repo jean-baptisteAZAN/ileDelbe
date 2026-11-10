@@ -7,12 +7,13 @@ import SwiftUI
 enum HaloStyle {
     static let closed = (radius: CGFloat(11), y: CGFloat(0), opacity: 0.9)
     static let open = (radius: CGFloat(35), y: CGFloat(13), opacity: 0.8)
-    /// Transparent window margin around `expanded`: the blur reaches ~radius beyond the shape,
+    /// Transparent window margin around the largest open panel: the blur reaches ~radius beyond the shape,
     /// shifted down by `y`.
     static let windowMargin = (horizontal: open.radius, bottom: open.radius + open.y)
 }
 
-/// Fills the panel window (`expanded` plus a transparent glow margin); everything is pinned top-center.
+/// Fills the panel window (the largest open panel of the current style plus a transparent glow
+/// margin); everything is pinned top-center, so the shape is sized from the model, never the window.
 struct NotchRootView: View {
     let model: NotchViewModel
 
@@ -23,8 +24,9 @@ struct NotchRootView: View {
     var body: some View {
         if let geometry = model.geometry {
             let layout = model.closedLayout
+            let wings = model.closedWings
             let isOpen = model.isOpen
-            let size = shapeSize(geometry, layout: layout)
+            let size = isOpen ? model.panelSize : geometry.closedRect(wings).size
             let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
             ZStack(alignment: .top) {
                 // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
@@ -48,7 +50,8 @@ struct NotchRootView: View {
                     }
                 if !isOpen && layout == .mediaAndBubble {
                     BubbleView(timer: model.timer.timer, now: model.timer.now)
-                        .offset(x: geometry.bubbleRect(after: geometry.closedRect(.standard)).midX - geometry.openRect(size: CGSize(width: 548, height: 236)).midX)
+                        // Content is centered on the notch: offset from its center.
+                        .offset(x: geometry.bubbleRect(after: geometry.closedRect(wings)).midX - geometry.notch.midX)
                         .transition(.scale(scale: 0.6, anchor: .leading)
                             .combined(with: .offset(x: -30))
                             .combined(with: .opacity))
@@ -59,33 +62,40 @@ struct NotchRootView: View {
             .environment(\.colorScheme, .dark)
             .animation(Self.spring, value: isOpen)
             .animation(Self.spring, value: layout)
-        }
-    }
-
-    private func shapeSize(_ g: NotchGeometry, layout: ClosedLayout) -> CGSize {
-        if model.isOpen { return g.openRect(size: CGSize(width: 548, height: 236)).size }
-        switch layout {
-        case .plain: return g.notch.size
-        case .media, .mediaAndBubble, .timer: return g.closedRect(.standard).size
-        case .alert: return g.closedRect(.alert).size
+            .animation(Self.spring, value: wings)
+            .animation(Self.spring, value: size)
         }
     }
 
     /// Closed: soft glow while media plays. Open: stronger glow under the panel while playing.
+    /// No halo without an accent, or with the Musique module hidden.
     private func haloColor(layout: ClosedLayout, isOpen: Bool) -> Color {
-        guard model.isPlaying, let glow = model.halo.glow else { return .clear }
-        if isOpen { return glow.opacity(HaloStyle.open.opacity) }
-        return (layout == .media || layout == .mediaAndBubble) ? glow.opacity(HaloStyle.closed.opacity) : .clear
+        guard model.isPlaying, model.settings.settings.visibleModules.contains(.music),
+              let accent = model.accent else { return .clear }
+        let scale = model.haloOpacityScale
+        if isOpen { return accent.opacity(min(HaloStyle.open.opacity * scale, 1)) }
+        return (layout == .media || layout == .mediaAndBubble)
+            ? accent.opacity(min(HaloStyle.closed.opacity * scale, 1)) : .clear
     }
 
     @ViewBuilder
     private func content(geometry g: NotchGeometry, layout: ClosedLayout) -> some View {
         if model.isOpen {
+            // Every style renders the Onglets content for now; only the size follows the style.
             VStack(alignment: .leading, spacing: 12) {
-                TabBarView(selected: model.selectedTab, timerActive: model.timer.timer.isActive,
-                           infoLine: model.calendar.infoLine, onSelect: { model.select($0) })
-                pane(model.selectedTab)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                if let tab = model.shownTab {
+                    TabBarView(tabs: model.modules, selected: tab, timerActive: model.timer.timer.isActive,
+                               infoLine: model.settings.settings.visibleModules.contains(.agenda)
+                                   ? model.calendar.infoLine : nil,
+                               onSelect: { model.select($0) })
+                    pane(tab)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                } else {
+                    Text("Aucun module affiché")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
             }
             // Clear the hardware notch band at the top, then pad the rest.
             .padding(.top, g.notch.height + 6)
@@ -93,9 +103,10 @@ struct NotchRootView: View {
             .padding(.bottom, 14)
             .transition(.opacity)
         } else if layout != .plain {
-            ClosedActivityView(layout: layout, artworkData: model.nowPlaying.info?.artworkData,
+            ClosedActivityView(layout: layout, wings: model.closedWings,
+                               artworkData: model.nowPlaying.info?.artworkData,
                                isPlaying: model.isPlaying, timer: model.timer.timer, now: model.timer.now,
-                               glow: model.isPlaying ? model.halo.glow : nil)
+                               glow: model.isPlaying ? model.accent : nil, haloScale: model.haloOpacityScale)
                 .frame(height: g.notch.height)
                 .transition(.opacity)
         }
@@ -108,7 +119,8 @@ struct NotchRootView: View {
             MusicPaneView(
                 info: model.nowPlaying.info,
                 history: model.history.history.recent(excluding: model.nowPlaying.info),
-                glow: model.halo.glow,
+                glow: model.accent,
+                haloScale: model.haloOpacityScale,
                 volume: model.volume.volume,
                 isVolumeSettable: model.volume.isSettable,
                 onCommand: { model.nowPlaying.send($0) },
@@ -117,6 +129,7 @@ struct NotchRootView: View {
             let timer = model.timer
             TimerPaneView(
                 timer: timer.timer, now: timer.now,
+                presetsMinutes: model.settings.settings.timerPresetsMinutes,
                 onStart: { timer.start($0) }, onAddMinute: { timer.addMinute() },
                 onPause: { timer.pause() }, onResume: { timer.resume() },
                 onStop: { timer.stop() }, onAcknowledge: { timer.acknowledge() })
@@ -131,6 +144,7 @@ struct NotchRootView: View {
             let files = model.files
             FilesPaneView(
                 files: files.files, home: FileManager.default.homeDirectoryForCurrentUser,
+                count: model.settings.settings.recentFileCount,
                 icon: { files.icon(for: $0) }, now: Date(),
                 onOpen: { files.open($0) },
                 onDragStart: { model.isDraggingFile = true })
@@ -148,7 +162,7 @@ private extension NowPlayingInfo {
 }
 
 #Preview("Closed playing") {
-    ClosedActivityView(layout: .media, artworkData: nil, isPlaying: true,
+    ClosedActivityView(layout: .media, wings: .standard, artworkData: nil, isPlaying: true,
                        timer: CountdownTimer(), now: .now, glow: Color(red: 0.9, green: 0.3, blue: 0.5))
         .frame(width: 220, height: 32)
         .background(NotchShape(bottomRadius: 10).fill(.black))

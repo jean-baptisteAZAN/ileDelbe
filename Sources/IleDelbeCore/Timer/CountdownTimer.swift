@@ -8,7 +8,6 @@ public struct CountdownTimer: Equatable, Codable, Sendable {
         case ringing(since: Date)
     }
 
-    public static let presets: [TimeInterval] = [300, 600, 1500]
     public static let ringingAutoClear: TimeInterval = 60
 
     public private(set) var state: State

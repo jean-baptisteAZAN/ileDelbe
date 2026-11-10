@@ -7,7 +7,10 @@ struct ExpandedPlayerView: View {
     var isOpen: Bool
     var volume: Float
     var isVolumeSettable: Bool
+    /// Accent: artwork shadow and progress fill. nil = no shadow, white fill.
     var glow: Color? = nil
+    /// Halo intensity multiplier (1 = the 0.2 look).
+    var haloScale: Double = 1
     var onCommand: (AdapterCommand) -> Void
     var onVolume: (Float) -> Void
 
@@ -18,7 +21,7 @@ struct ExpandedPlayerView: View {
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
                     ArtworkView(data: info.artworkData, size: 64, cornerRadius: 10)
-                        .shadow(color: glow?.opacity(0.8) ?? .clear, radius: 35, y: 13)
+                        .shadow(color: glow?.opacity(min(0.8 * haloScale, 1)) ?? .clear, radius: 35, y: 13)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(info.title)
                             .font(.system(size: 14, weight: .bold))

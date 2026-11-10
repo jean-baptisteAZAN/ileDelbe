@@ -1,9 +1,10 @@
 import IleDelbeCore
 import SwiftUI
 
-/// Segmented pill of panel tabs + right-aligned info line.
+/// Segmented pill of the visible modules, in settings order, + right-aligned info line.
 struct TabBarView: View {
-    var selected: PanelTab
+    var tabs: [PanelTab]
+    var selected: PanelTab?
     var timerActive: Bool
     var infoLine: String?
     var onSelect: (PanelTab) -> Void
@@ -20,7 +21,7 @@ struct TabBarView: View {
     var body: some View {
         HStack {
             HStack(spacing: 4) {
-                ForEach(PanelTab.allCases, id: \.self) { tab in
+                ForEach(tabs, id: \.self) { tab in
                     Button { onSelect(tab) } label: {
                         HStack(spacing: 6) {
                             Text(Self.title(tab))
@@ -47,6 +48,7 @@ struct TabBarView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
+            // The settings gear goes here, right of the bar (later task).
         }
     }
 }
@@ -54,8 +56,9 @@ struct TabBarView: View {
 #if DEBUG
 #Preview("Tab bar") {
     VStack(spacing: 12) {
-        TabBarView(selected: .music, timerActive: true, infoLine: "Standup dans 12 min", onSelect: { _ in })
-        TabBarView(selected: .agenda, timerActive: false, infoLine: nil, onSelect: { _ in })
+        TabBarView(tabs: PanelTab.allCases, selected: .music, timerActive: true, infoLine: "Standup dans 12 min",
+                   onSelect: { _ in })
+        TabBarView(tabs: [.agenda, .files], selected: .agenda, timerActive: false, infoLine: nil, onSelect: { _ in })
     }
     .padding(18).frame(width: 548).background(Color.black)
 }

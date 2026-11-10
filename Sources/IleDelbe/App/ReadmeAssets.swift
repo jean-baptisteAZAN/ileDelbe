@@ -273,7 +273,7 @@ private struct Scene: View {
     private func content(_ g: NotchGeometry, isOpen: Bool, layout: ClosedLayout) -> some View {
         if case let .open(tab) = mode {
             VStack(alignment: .leading, spacing: 12) {
-                TabBarView(selected: tab, timerActive: sample.timer.isActive, infoLine: sample.infoLine,
+                TabBarView(tabs: PanelTab.allCases, selected: tab, timerActive: sample.timer.isActive, infoLine: sample.infoLine,
                            onSelect: { _ in })
                 pane(tab)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -282,7 +282,8 @@ private struct Scene: View {
             .padding(.horizontal, 18)
             .padding(.bottom, 14)
         } else {
-            ClosedActivityView(layout: layout, artworkData: sample.info.artworkData, isPlaying: true,
+            ClosedActivityView(layout: layout, wings: PanelRules.closedWings(layout, closedStyle: .artworkEqualizer),
+                               artworkData: sample.info.artworkData, isPlaying: true,
                                timer: sample.timer, now: sample.now, glow: sample.glow)
                 .frame(height: g.notch.height)
         }

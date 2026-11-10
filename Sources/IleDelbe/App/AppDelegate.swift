@@ -28,8 +28,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             history: HistoryService(nowPlaying: nowPlaying),
             halo: HaloService(nowPlaying: nowPlaying),
             calendar: CalendarService(),
-            files: RecentFilesService())
-        controller = NotchWindowController(model: model)
+            files: RecentFilesService(),
+            settings: SettingsStore())
+        let controller = NotchWindowController(model: model)
+        // Gear / « Réglages… »: close the panel now. The settings window comes in a later task.
+        model.onOpenSettings = { [weak controller] in controller?.closeNow() }
+        self.controller = controller
     }
 
     func applicationWillTerminate(_ notification: Notification) {

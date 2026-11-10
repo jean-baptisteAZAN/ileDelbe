@@ -7,6 +7,7 @@ struct MusicPaneView: View {
     var info: NowPlayingInfo?
     var history: [ListeningEntry]
     var glow: Color?
+    var haloScale: Double = 1
     var volume: Float
     var isVolumeSettable: Bool
     var onCommand: (AdapterCommand) -> Void
@@ -21,7 +22,7 @@ struct MusicPaneView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 18) {
             ExpandedPlayerView(info: info, isOpen: true, volume: volume, isVolumeSettable: isVolumeSettable,
-                               glow: glow, onCommand: onCommand, onVolume: onVolume)
+                               glow: glow, haloScale: haloScale, onCommand: onCommand, onVolume: onVolume)
                 .frame(maxWidth: .infinity)
             historyColumn
                 .frame(width: 190, alignment: .leading)

@@ -4,11 +4,16 @@ import SwiftUI
 /// Content of the closed pill. The middle (hardware notch) is always left empty.
 struct ClosedActivityView: View {
     var layout: ClosedLayout
+    /// Widths of the left and right wings actually drawn (independent: title mode is asymmetric).
+    var wings: ClosedWings
     var artworkData: Data?
     var isPlaying: Bool
     var timer: CountdownTimer
     var now: Date
+    /// Accent while playing (artwork shadow, equalizer); nil = no glow, white equalizer.
     var glow: Color?
+    /// Halo intensity multiplier (1 = the 0.2 look).
+    var haloScale: Double = 1
 
     var body: some View {
         switch layout {
@@ -17,27 +22,27 @@ struct ClosedActivityView: View {
         case .media, .mediaAndBubble:
             HStack(spacing: 0) {
                 ArtworkView(data: artworkData, size: 20, cornerRadius: 4)
-                    .shadow(color: glow?.opacity(0.9) ?? .clear, radius: 11)
-                    .frame(width: ClosedWings.standard.left)
+                    .shadow(color: glow?.opacity(min(0.9 * haloScale, 1)) ?? .clear, radius: 11)
+                    .frame(width: wings.left)
                 Spacer(minLength: 0)
-                EqualizerView(isPlaying: isPlaying)
-                    .frame(width: ClosedWings.standard.left)
+                EqualizerView(isPlaying: isPlaying, color: glow ?? .white)
+                    .frame(width: wings.right)
             }
         case .timer:
             HStack(spacing: 0) {
                 Image(systemName: "timer")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Color.timerOrange)
-                    .frame(width: ClosedWings.standard.left)
+                    .frame(width: wings.left)
                 Spacer(minLength: 0)
                 Text(TimerText.string(timer.remaining(at: now)))
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
                     .foregroundStyle(Color.timerOrange)
                     .minimumScaleFactor(0.8)
-                    .frame(width: ClosedWings.standard.left)
+                    .frame(width: wings.right)
             }
         case .alert:
-            AlertPulse()
+            AlertPulse(wings: wings)
         }
     }
 }
@@ -45,19 +50,20 @@ struct ClosedActivityView: View {
 /// "Minuteur terminé" pulse. The animation exists only while this view is in the hierarchy
 /// (i.e. while the layout is `.alert`).
 private struct AlertPulse: View {
+    var wings: ClosedWings
     @State private var dim = false
 
     var body: some View {
         HStack(spacing: 0) {
             Image(systemName: "bell.fill")
                 .font(.system(size: 12, weight: .semibold))
-                .frame(width: ClosedWings.alert.left)
+                .frame(width: wings.left)
             Spacer(minLength: 0)
             Text("Minuteur terminé")
                 .font(.system(size: 11, weight: .semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
-                .frame(width: ClosedWings.alert.left)
+                .frame(width: wings.right)
         }
         .foregroundStyle(Color.timerOrange)
         .opacity(dim ? 0.35 : 1)

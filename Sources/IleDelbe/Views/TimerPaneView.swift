@@ -5,6 +5,8 @@ import SwiftUI
 struct TimerPaneView: View {
     var timer: CountdownTimer
     var now: Date
+    /// The three durations offered at rest, in minutes (from the settings).
+    var presetsMinutes: [Int] = AppSettings.default.timerPresetsMinutes
     var onStart: (TimeInterval) -> Void
     var onAddMinute: () -> Void
     var onPause: () -> Void
@@ -27,8 +29,9 @@ struct TimerPaneView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                ForEach(CountdownTimer.presets, id: \.self) { preset in
-                    pill("\(Int(preset / 60)) min", highlighted: true) { onStart(preset) }
+                // Offsets as ids: two presets may hold the same duration.
+                ForEach(Array(presetsMinutes.enumerated()), id: \.offset) { _, minutes in
+                    pill("\(minutes) min", highlighted: true) { onStart(TimeInterval(minutes * 60)) }
                 }
             }
         }
