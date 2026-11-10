@@ -27,7 +27,7 @@ struct ClosedActivityView: View {
         case .media, .mediaAndBubble:
             HStack(spacing: 0) {
                 ArtworkView(data: artworkData, size: 20, cornerRadius: 4)
-                    .shadow(color: glow?.opacity(min(0.9 * haloScale, 1)) ?? .clear, radius: 11)
+                    .shadow(color: glow?.haloOpacity(0.9, scale: haloScale) ?? .clear, radius: 11)
                     .frame(width: wings.left)
                 Spacer(minLength: 0)
                 if showsTitle {

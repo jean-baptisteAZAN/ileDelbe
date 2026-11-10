@@ -32,7 +32,7 @@ struct TransportControls: View {
 extension View {
     /// Accent glow under the artwork, scaled by the halo intensity (none without an accent).
     func artworkGlow(_ glow: Color?, haloScale: Double, radius: CGFloat = 35, y: CGFloat = 13) -> some View {
-        shadow(color: glow?.opacity(min(0.8 * haloScale, 1)) ?? .clear, radius: radius, y: y)
+        shadow(color: glow?.haloOpacity(0.8, scale: haloScale) ?? .clear, radius: radius, y: y)
     }
 }
 

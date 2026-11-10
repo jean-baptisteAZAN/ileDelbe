@@ -41,16 +41,6 @@ struct AgendaPaneView: View {
     }
 }
 
-extension Color {
-    /// "#RRGGBB" (leading # optional); nil if malformed.
-    init?(hex: String?) {
-        guard let s = hex?.trimmingCharacters(in: CharacterSet(charactersIn: "#")), s.count == 6,
-              let v = UInt32(s, radix: 16) else { return nil }
-        self.init(red: Double((v >> 16) & 0xFF) / 255, green: Double((v >> 8) & 0xFF) / 255,
-                  blue: Double(v & 0xFF) / 255)
-    }
-}
-
 #if DEBUG
 @MainActor private func agendaPreview(_ access: CalendarService.Access, _ events: [AgendaEvent]) -> some View {
     AgendaPaneView(access: access, events: events, now: .now, onAppear: {}, onJoin: { _ in }, onOpenSettings: {})

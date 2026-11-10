@@ -80,9 +80,9 @@ struct NotchRootView: View {
         guard model.isPlaying, model.settings.settings.visibleModules.contains(.music),
               let accent = model.accent else { return .clear }
         let scale = model.haloOpacityScale
-        if isOpen { return accent.opacity(min(HaloStyle.open.opacity * scale, 1)) }
+        if isOpen { return accent.haloOpacity(HaloStyle.open.opacity, scale: scale) }
         return (layout == .media || layout == .mediaAndBubble)
-            ? accent.opacity(min(HaloStyle.closed.opacity * scale, 1)) : .clear
+            ? accent.haloOpacity(HaloStyle.closed.opacity, scale: scale) : .clear
     }
 
     /// « titre · artiste » (just the title when the artist is unknown).
