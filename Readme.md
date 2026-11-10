@@ -100,12 +100,12 @@ Open **Réglages ileDelbe** with the gear in the open panel, or right-click insi
 
 <img src="docs/assets/settings.png" alt="The Réglages ileDelbe window" width="360">
 
+- **Écrans.** Where the notch appears: *Écran intégré*, *Écran principal*, *Un écran au choix* or *Tous les écrans*.
 - **Style.** *Île*, *Grille* or *Onglets*.
 - **Couleur.** The accent of the halo and seek bar: *Pochette* (from the artwork), *Fixe* (blue, green, violet, yellow or white) or *Aucune*. **Intensité du halo** sets the glow strength.
 - **Modules.** Show or hide *Musique*, *Minuteur*, *Agenda* and *Fichiers*, reorder them, and choose which one opens first (**À l'ouverture**, *Automatique* by default).
 - **Encoche fermée.** What the notch shows while music plays: *Pochette + égaliseur*, *Titre* or *Rien*. **Animer l'encoche fermée** turns the equalizer and the scrolling title on or off; with **Reduce Motion** enabled in System Settings > Accessibility > Display, they stay still whatever this option says. **Délai d'ouverture au survol** sets how long you hover before the panel opens.
 - **Minuteur.** The three preset durations (1 to 180 min).
-- **Écrans.** Where the notch appears: *Écran intégré*, *Écran principal*, *Un écran au choix* or *Tous les écrans*.
 - **Panneau.** *Normale* or *Compacte* size, and 3 or 5 recent files.
 - **Lancer à l'ouverture de session.** Starts ileDelbe at login.
 
@@ -114,13 +114,13 @@ Open **Réglages ileDelbe** with the gear in the open panel, or right-click insi
 ileDelbe also works on external screens and on Macs without a notch. There, it draws a virtual notch at the top center of the menu bar, using the menu bar height of that screen. Pick where it appears in the **Écrans** section of the settings, with **Afficher l'encoche sur**:
 
 - **Écran intégré** (default). The built-in screen only. With the lid closed, or no built-in screen, the notch moves to the main screen.
-- **Écran principal**. The screen that has the menu bar.
-- **Un écran au choix**. A screen you pick from the list. While it is unplugged, the notch falls back to another screen.
-- **Tous les écrans**. A notch on every screen. Alerts (timer end, meeting) show on all of them; only one panel is open at a time.
+- **Écran principal**. The main display: the one that has the menu bar in System Settings › Displays.
+- **Un écran au choix**. A screen you pick from the list. While it is unplugged, the notch falls back to the built-in screen, else the main screen, and returns to your screen as soon as you plug it back in.
+- **Tous les écrans**. A notch on every screen. The timer alert and the closed activity (wings, timer bubble) show on all of them; only one panel is open at a time.
 
 <img src="docs/assets/external-screen.png" alt="Virtual notch on an external screen: a thin idle bar, then the media pill with artwork and equalizer" width="100%">
 
-At rest, a virtual notch is only a thin bar, so it stays out of the way. It grows into a pill when something happens (music, timer, alert), and opens into the panel when you hover it. Only the drawn shape reacts to the pointer, and ileDelbe never takes focus.
+At rest, a virtual notch is only a thin bar, so it stays out of the way. It grows into a pill during activity (music playing, a running timer, the timer alert), and opens into the panel when you hover it. Paused music, a hidden module, or *Rien* as the closed notch style during playback keep the thin bar. Only the drawn shape reacts to the pointer, and ileDelbe never takes focus.
 
 ## Build from source
 
