@@ -45,6 +45,24 @@ public struct NotchGeometry: Equatable, Sendable {
                width: size.width, height: size.height)
     }
 
+    /// Panel window frame: the union of the open rect of `openSize` grown by the open halo
+    /// margin, and every closed footprint that can appear (standard, title and alert wings, and
+    /// the bubble after standard or title wings) grown by the closed halo margin. Symmetric around
+    /// `notch.midX`, so content pinned top-center stays centered on the notch.
+    public func windowFrame(openSize: CGSize, openMargin: (horizontal: CGFloat, bottom: CGFloat),
+                            closedMargin: CGFloat) -> CGRect {
+        let open = openRect(size: openSize)
+        var half = open.width / 2 + openMargin.horizontal
+        var minY = open.minY - openMargin.bottom
+        var closed = [ClosedWings.standard, .title, .alert].map(closedRect)
+        closed += [ClosedWings.standard, .title].map { bubbleRect(after: closedRect($0)) }
+        for r in closed {
+            half = max(half, notch.midX - r.minX + closedMargin, r.maxX - notch.midX + closedMargin)
+            minY = min(minY, r.minY - closedMargin)
+        }
+        return CGRect(x: notch.midX - half, y: minY, width: 2 * half, height: screenMaxY - minY)
+    }
+
     public func bubbleRect(after closed: CGRect) -> CGRect {
         CGRect(x: closed.maxX + Self.bubbleGap, y: notch.minY,
                width: Self.bubbleWidth, height: notch.height)

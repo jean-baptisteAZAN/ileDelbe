@@ -82,18 +82,20 @@ final class NotchWindowController {
         evaluateHover()
     }
 
-    /// Frames the window on the largest open size of the current style, density and modules.
+    /// Frames the window on the largest open size of the current style, density and modules,
+    /// widened to cover every closed pill and bubble (`NotchGeometry.windowFrame`).
     /// Only `setFrame`: never reorders the panel or takes focus, so it is safe while open.
     private func applyFrame() {
         guard let geometry = model.geometry else { return }
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
-        let e = geometry.openRect(size: model.maxPanelSize)
-        // The window extends past the open panel only so the open halo is not cut by the window
-        // edge. That margin never takes clicks: see `updateMousePassThrough`.
+        // The window extends past the open panel so the open halo is not cut by the window edge,
+        // and covers every closed pill + bubble (title mode or the alert can be wider than a
+        // small open panel). That extra area never takes clicks: see `updateMousePassThrough`.
         let m = HaloStyle.windowMargin
-        let frame = NSIntegralRect(CGRect(x: e.minX - m.horizontal, y: e.minY - m.bottom,
-                                          width: e.width + 2 * m.horizontal, height: e.height + m.bottom))
+        let frame = NSIntegralRect(geometry.windowFrame(openSize: model.maxPanelSize,
+                                                        openMargin: (horizontal: m.horizontal, bottom: m.bottom),
+                                                        closedMargin: HaloStyle.closed.radius))
         guard frame != panel.frame else { return }
         panel.setFrame(frame, display: true)
         log.info("panel frame \(NSStringFromRect(self.panel.frame), privacy: .public)")

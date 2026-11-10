@@ -12,7 +12,7 @@ enum HaloStyle {
     static let windowMargin = (horizontal: open.radius, bottom: open.radius + open.y)
 }
 
-/// Fills the panel window (the largest open panel of the current style plus a transparent glow
+/// Fills the panel window (the largest open panel or closed pill, plus a transparent glow
 /// margin); everything is pinned top-center, so the shape is sized from the model, never the window.
 struct NotchRootView: View {
     let model: NotchViewModel
