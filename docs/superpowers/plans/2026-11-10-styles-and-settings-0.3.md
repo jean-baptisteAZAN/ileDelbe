@@ -24,7 +24,7 @@
 
 ## Review Focus
 
-1. **Settings changed while the panel is open** (style, density, a module hidden): the shape, the hover rect and the window frame must follow at once. The panel must not stay open with a stale hit rect or close on its own. Test: Task 5 `windowFrameCoversEveryStateOfStyle`; manual check in Task 6.
+1. **Settings changed while the panel is open** (style, density, a module hidden): the shape, the hover rect and the window frame must follow at once. The panel must not stay open with a stale hit rect or close on its own. Test: Task 5 `windowFrameCoversEveryStateOfStyle`; manual check in Task 9.
 2. **Hiding the module currently shown**: the page or tab falls back to the first visible module without crashing. Test: Task 2 `defaultTabFallsBackWhenLastUsedHidden`; Task 4 `stepFromHiddenPageGoesToFirst`.
 3. **Trackpad momentum after a swipe** must not skip pages. A vertical scroll must not change page. Test: Task 4 `momentumIgnored`, `verticalScrollIgnored`.
 4. **Zero visible modules**: every style shows the 300 pt empty panel with the gear, and the closed notch stays plain. Test: Task 2 `emptySize`; Task 3 `closedLayoutHiddenModules`.
