@@ -16,8 +16,52 @@ public struct ClosedWings: Equatable, Sendable {
 public struct NotchGeometry: Equatable, Sendable {
     public let notch: CGRect
     public let screenMaxY: CGFloat
+    /// True for a screen without a hardware notch: the notch is drawn, not physical.
+    public let isVirtual: Bool
     public static let bubbleWidth: CGFloat = 76
     public static let bubbleGap: CGFloat = 8
+    public static let virtualNotchWidth: CGFloat = 180
+    public static let idleBarSize = CGSize(width: 120, height: 4)
+    public static let idleTolerance: CGFloat = 6
+
+    public init(notch: CGRect, screenMaxY: CGFloat, isVirtual: Bool = false) {
+        self.notch = notch
+        self.screenMaxY = screenMaxY
+        self.isVirtual = isVirtual
+    }
+
+    /// Notch drawn at the top center of a screen that has none.
+    public static func virtual(screenFrame: CGRect, menuBarHeight: CGFloat) -> NotchGeometry {
+        let notch = CGRect(x: screenFrame.midX - virtualNotchWidth / 2, y: screenFrame.maxY - menuBarHeight,
+                           width: virtualNotchWidth, height: menuBarHeight)
+        return NotchGeometry(notch: notch, screenMaxY: screenFrame.maxY, isVirtual: true)
+    }
+
+    public static func menuBarHeight(screenFrame: CGRect, visibleFrame: CGRect, fallback: CGFloat) -> CGFloat {
+        let h = screenFrame.maxY - visibleFrame.maxY
+        return h > 0 ? h : fallback
+    }
+
+    /// Thin bar shown at rest on a virtual notch.
+    public var idleBarRect: CGRect {
+        CGRect(x: notch.midX - Self.idleBarSize.width / 2, y: screenMaxY - Self.idleBarSize.height,
+               width: Self.idleBarSize.width, height: Self.idleBarSize.height)
+    }
+
+    private func isIdleVirtual(_ wings: ClosedWings) -> Bool { isVirtual && wings == .none }
+
+    /// What is drawn when closed.
+    public func closedShapeRect(_ wings: ClosedWings) -> CGRect {
+        isIdleVirtual(wings) ? idleBarRect : closedRect(wings)
+    }
+
+    /// What reacts to the pointer when closed: the idle bar gets a small tolerance below it.
+    public func closedTriggerRect(_ wings: ClosedWings) -> CGRect {
+        guard isIdleVirtual(wings) else { return closedRect(wings) }
+        let bar = idleBarRect
+        return CGRect(x: bar.minX, y: bar.minY - Self.idleTolerance,
+                      width: bar.width, height: bar.height + Self.idleTolerance)
+    }
 
     /// nil when screen has no notch (aux areas nil or safe top inset 0)
     public static func make(screenFrame: CGRect, safeAreaTop: CGFloat,
@@ -26,7 +70,7 @@ public struct NotchGeometry: Equatable, Sendable {
         let notch = CGRect(x: left.maxX, y: screenFrame.maxY - safeAreaTop,
                            width: right.minX - left.maxX, height: safeAreaTop)
         guard notch.width > 0 else { return nil }
-        return NotchGeometry(notch: notch, screenMaxY: screenFrame.maxY)
+        return NotchGeometry(notch: notch, screenMaxY: screenFrame.maxY, isVirtual: false)
     }
 
     public func closedRect(_ wings: ClosedWings) -> CGRect {
