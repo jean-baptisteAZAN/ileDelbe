@@ -1,32 +1,30 @@
 import AppKit
 import IleDelbeCore
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct FilesPaneView: View {
     var files: [RecentFile]
     var home: URL
+    /// How many files to show (setting: 3 or 5). `files` may hold more.
+    var count: Int = 3
     var icon: (RecentFile) -> NSImage
     var now: Date
     var onOpen: (RecentFile) -> Void
     var onDragStart: () -> Void
 
+    private static let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Récents")
-                .font(.system(size: 10.5, weight: .semibold))
-                .textCase(.uppercase).tracking(0.8)
-                .foregroundStyle(.secondary)
+            ModuleLabel("Récents")
             if files.isEmpty {
-                Text("Aucun fichier récent")
-                    .font(.system(size: 13)).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                ModuleEmptyText("Aucun fichier récent")
             } else {
-                HStack(spacing: 8) {
-                    ForEach(files.prefix(3)) { file in
+                // 3 flexible columns: 3 files fill one row, 5 wrap as 3 + 2 (cards ~50 pt, two rows fit).
+                LazyVGrid(columns: Self.columns, alignment: .leading, spacing: 8) {
+                    ForEach(files.prefix(count)) { file in
                         card(file)
                     }
-                    if files.count < 3 { Spacer(minLength: 0) }
                 }
                 Spacer(minLength: 0)
             }
@@ -35,9 +33,7 @@ struct FilesPaneView: View {
 
     private func card(_ file: RecentFile) -> some View {
         HStack(spacing: 10) {
-            Image(nsImage: icon(file))
-                .resizable().aspectRatio(contentMode: .fit)
-                .frame(width: 30, height: 30)
+            RecentFileIcon(image: icon(file), size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text(file.name)
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
@@ -49,31 +45,28 @@ struct FilesPaneView: View {
         .padding(10)
         .frame(maxWidth: .infinity)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.white.opacity(0.06)))
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .onTapGesture { onOpen(file) }
-        .onDrag {
-            onDragStart()
-            return NSItemProvider(contentsOf: file.url) ?? NSItemProvider()
-        }
+        .recentFileInteractions(file, shape: RoundedRectangle(cornerRadius: 12, style: .continuous),
+                                onOpen: onOpen, onDragStart: onDragStart)
     }
 }
 
 #if DEBUG
-private let previewHome = URL(fileURLWithPath: "/Users/demo")
-private let previewFiles = [
-    RecentFile(url: previewHome.appendingPathComponent("Desktop/Capture.png"), lastUsed: .now.addingTimeInterval(-300), isDirectory: false),
-    RecentFile(url: previewHome.appendingPathComponent("Documents/Devis client 2026.pdf"), lastUsed: .now.addingTimeInterval(-7200), isDirectory: false),
-    RecentFile(url: previewHome.appendingPathComponent("Downloads/notes.txt"), lastUsed: .now.addingTimeInterval(-90000), isDirectory: false),
-]
-
 #Preview("Files 3") {
-    FilesPaneView(files: previewFiles, home: previewHome, icon: { NSWorkspace.shared.icon(for: UTType(filenameExtension: $0.url.pathExtension) ?? .data) },
+    FilesPaneView(files: PreviewSamples.files, home: PreviewSamples.home, icon: { PreviewSamples.icon($0) },
                   now: .now, onOpen: { _ in }, onDragStart: {})
-        .padding(18).frame(width: 548, height: 130).background(Color.black)
+        .previewPanel(width: 548, height: 130)
+}
+
+/// Onglets pane below the tab bar: 512 × ~146 pt, the 5 files wrap as 3 + 2.
+#Preview("Files 5") {
+    FilesPaneView(files: PreviewSamples.files, home: PreviewSamples.home, count: 5, icon: { PreviewSamples.icon($0) },
+                  now: .now, onOpen: { _ in }, onDragStart: {})
+        .previewPanel(width: 548, height: 182)
 }
 
 #Preview("Files 0") {
-    FilesPaneView(files: [], home: previewHome, icon: { _ in NSImage() }, now: .now, onOpen: { _ in }, onDragStart: {})
-        .padding(18).frame(width: 548, height: 130).background(Color.black)
+    FilesPaneView(files: [], home: PreviewSamples.home, icon: { _ in NSImage() }, now: .now, onOpen: { _ in },
+                  onDragStart: {})
+        .previewPanel(width: 548, height: 130)
 }
 #endif

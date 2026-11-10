@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-10
+
+Styles and a settings window.
+
+### Changed
+
+- **Île is the new default style**: one compact module at a time, with pagination dots. The 0.2 look is still there as the **Onglets** style. Existing users get Île after updating; switch back in the settings.
+
+### Added
+
+- Three panel styles: Île, Grille (all modules at once) and Onglets. Île has a **Tout voir** button that shows the Grille layout.
+- Réglages window (gear in the open panel, or right-click the notch > **Réglages…**): style, accent (artwork, fixed tint or none) and halo intensity, module visibility and order, module opened first, closed-notch display (Pochette + égaliseur, Titre, Rien), **Animer l'encoche fermée**, hover-open delay, timer presets, panel size (Normale or Compacte), 3 or 5 recent files, and launch at login.
+- Closed-notch animations honor Reduce Motion.
+- README images for the three styles and the settings window.
+
 ## [0.2.0] - 2026-11-09
 
 The notch becomes a hub ("Stack").
@@ -38,6 +53,7 @@ First version: a Now Playing media panel in the notch.
 - Now Playing for any source macOS reports (Spotify, Music, browsers), through the vendored mediaremote-adapter.
 - Non-activating panel that never takes focus and passes clicks outside its shape to the menu bar.
 
-[Unreleased]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/jean-baptisteAZAN/ileDelbe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jean-baptisteAZAN/ileDelbe/releases/tag/v0.1.0

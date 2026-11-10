@@ -28,7 +28,7 @@ public struct RecentFile: Equatable, Sendable, Identifiable {
 }
 
 public enum RecentFiles {
-    public static let limit = 3
+    public static let limit = 5
 
     public static func select(_ candidates: [RecentFile], home: URL) -> [RecentFile] {
         let library = home.appendingPathComponent("Library").standardizedFileURL.pathComponents

@@ -7,21 +7,16 @@ struct MusicPaneView: View {
     var info: NowPlayingInfo?
     var history: [ListeningEntry]
     var glow: Color?
+    var haloScale: Double = 1
     var volume: Float
     var isVolumeSettable: Bool
     var onCommand: (AdapterCommand) -> Void
     var onVolume: (Float) -> Void
 
-    private static let time: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "HH:mm"
-        return f
-    }()
-
     var body: some View {
         HStack(alignment: .top, spacing: 18) {
             ExpandedPlayerView(info: info, isOpen: true, volume: volume, isVolumeSettable: isVolumeSettable,
-                               glow: glow, onCommand: onCommand, onVolume: onVolume)
+                               glow: glow, haloScale: haloScale, onCommand: onCommand, onVolume: onVolume)
                 .frame(maxWidth: .infinity)
             historyColumn
                 .frame(width: 190, alignment: .leading)
@@ -30,11 +25,7 @@ struct MusicPaneView: View {
 
     private var historyColumn: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Écoutés récemment")
-                .font(.system(size: 10.5, weight: .semibold))
-                .textCase(.uppercase)
-                .tracking(0.8)
-                .foregroundStyle(.secondary)
+            ModuleLabel("Écoutés récemment")
             ForEach(Array(history.prefix(3).enumerated()), id: \.offset) { _, entry in
                 HStack(spacing: 8) {
                     ArtworkView(data: entry.thumbnail, size: 28, cornerRadius: 6)
@@ -43,7 +34,7 @@ struct MusicPaneView: View {
                         .foregroundStyle(.white)
                         .lineLimit(1)
                     Spacer(minLength: 0)
-                    Text(Self.time.string(from: entry.startedAt))
+                    Text(ClockText.string(from: entry.startedAt))
                         .font(.system(size: 11).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
@@ -58,28 +49,15 @@ struct MusicPaneView: View {
 }
 
 #if DEBUG
-private extension NowPlayingInfo {
-    static var previewSample: NowPlayingInfo {
-        NowPlayingInfo(bundleIdentifier: "com.apple.Music", title: "Une chanson", artist: "Artiste",
-                       isPlaying: true, duration: 215, elapsed: 42, timestamp: .now)
-    }
-}
-
-private let previewHistory = [
-    ListeningEntry(title: "Premier titre", artist: "A", startedAt: .now.addingTimeInterval(-600), thumbnail: nil),
-    ListeningEntry(title: "Deuxième titre un peu long", artist: "B", startedAt: .now.addingTimeInterval(-3000), thumbnail: nil),
-    ListeningEntry(title: "Troisième", artist: nil, startedAt: .now.addingTimeInterval(-7000), thumbnail: nil),
-]
-
 #Preview("Music, no glow") {
-    MusicPaneView(info: .previewSample, history: previewHistory, glow: nil, volume: 0.5,
+    MusicPaneView(info: PreviewSamples.nowPlaying, history: PreviewSamples.history, glow: nil, volume: 0.5,
                   isVolumeSettable: true, onCommand: { _ in }, onVolume: { _ in })
-        .padding(18).frame(width: 548, height: 190).background(Color.black)
+        .previewPanel(width: 548, height: 190)
 }
 
 #Preview("Music, glow") {
-    MusicPaneView(info: .previewSample, history: previewHistory, glow: Color(red: 0.9, green: 0.3, blue: 0.5),
+    MusicPaneView(info: PreviewSamples.nowPlaying, history: PreviewSamples.history, glow: PreviewSamples.glow,
                   volume: 0.5, isVolumeSettable: true, onCommand: { _ in }, onVolume: { _ in })
-        .padding(18).frame(width: 548, height: 190).background(Color.black)
+        .previewPanel(width: 548, height: 190)
 }
 #endif

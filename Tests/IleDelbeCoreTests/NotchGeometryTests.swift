@@ -15,28 +15,27 @@ import Testing
         #expect(make()?.notch == CGRect(x: 662, y: 950, width: 188, height: 32))
     }
 
-    @Test func closedActiveRect() {
-        #expect(make()?.closedActive == CGRect(x: 626, y: 950, width: 260, height: 32))
+    @Test func closedRects() {
+        let g = make()!
+        #expect(g.closedRect(.standard) == CGRect(x: 626, y: 950, width: 260, height: 32))
+        #expect(g.closedRect(.alert) == CGRect(x: 552, y: 950, width: 408, height: 32))
+        #expect(g.closedRect(.title) == CGRect(x: 626, y: 950, width: 344, height: 32))
+        #expect(g.closedRect(.none) == g.notch)
     }
 
-    @Test func closedAlertRect() {
-        let g = make()
-        #expect(g?.closedAlert == CGRect(x: 552, y: 950, width: 408, height: 32))
-        #expect(g.map { $0.expanded.contains($0.closedAlert) } == true)
+    @Test func openRect() {
+        #expect(make()!.openRect(size: CGSize(width: 548, height: 236)) == CGRect(x: 482, y: 746, width: 548, height: 236))
     }
 
-    @Test func expandedRect() {
-        #expect(make()?.expanded == CGRect(x: 482, y: 746, width: 548, height: 236))
-    }
-
-    @Test func bubbleRect() {
-        #expect(make()?.bubble == CGRect(x: 894, y: 950, width: 76, height: 32))
-        #expect(make()?.expanded.contains(make()!.bubble) == true)
+    @Test func bubbleFollowsActualWing() {
+        let g = make()!
+        #expect(g.bubbleRect(after: g.closedRect(.standard)) == CGRect(x: 894, y: 950, width: 76, height: 32))
+        #expect(g.bubbleRect(after: g.closedRect(.title)).minX == 978)
     }
 
     @Test func nonZeroOrigin() {
         #expect(make(originX: 1512)?.notch == CGRect(x: 2174, y: 950, width: 188, height: 32))
-        #expect(make(originX: 1512)?.expanded == CGRect(x: 1994, y: 746, width: 548, height: 236))
+        #expect(make(originX: 1512)?.openRect(size: CGSize(width: 548, height: 236)) == CGRect(x: 1994, y: 746, width: 548, height: 236))
     }
 
     @Test func noNotch() {
@@ -48,5 +47,43 @@ import Testing
                                    auxiliaryTopLeft: right, auxiliaryTopRight: nil) == nil)
         #expect(NotchGeometry.make(screenFrame: screen, safeAreaTop: 0,
                                    auxiliaryTopLeft: right, auxiliaryTopRight: right) == nil)
+    }
+
+    @Test func closedOffsetFollowsAsymmetricWings() {
+        let g = NotchGeometry(notch: CGRect(x: 662, y: 950, width: 188, height: 32), screenMaxY: 982)
+        #expect(g.closedOffsetX(.title) == 42)
+        #expect(g.closedOffsetX(.standard) == 0)
+        #expect(g.closedOffsetX(.none) == 0)
+        #expect(g.closedOffsetX(.alert) == 0)
+        // The offset shape coincides with closedRect.
+        #expect(g.notch.midX + g.closedOffsetX(.title) == g.closedRect(.title).midX)
+    }
+
+    // Notch 188 wide centred at x 756; open halo margin 35 sides / 48 bottom, closed halo 11.
+    // Widest closed footprint: title wing + bubble = 94 + 120 + 8 + 76 = 298 (+11) right of centre.
+    let wg = NotchGeometry(notch: CGRect(x: 662, y: 950, width: 188, height: 32), screenMaxY: 982)
+    func frame(_ size: CGSize) -> CGRect {
+        wg.windowFrame(openSize: size, openMargin: (horizontal: 35, bottom: 48), closedMargin: 11)
+    }
+
+    @Test func windowFrameCoversClosedAlertWhenOpenIsSmall() {
+        // All modules hidden: open 300 wide (185 per side with margin) < alert 204 + 11.
+        let f = frame(CGSize(width: 300, height: 112))
+        #expect(f == CGRect(x: 756 - 309, y: 982 - 112 - 48, width: 618, height: 112 + 48))
+        #expect(f.minX <= wg.closedRect(.alert).minX - 11 && f.maxX >= wg.closedRect(.alert).maxX + 11)
+    }
+
+    @Test func windowFrameCoversTitleBubble() {
+        // Compact Onglets: 482 + 70 = 552 (276 per side) < 298 + 11 for the title bubble.
+        let f = frame(CGSize(width: 482, height: 212))
+        #expect(f.maxX >= wg.bubbleRect(after: wg.closedRect(.title)).maxX + 11)
+        #expect(f.midX == wg.notch.midX)
+        #expect(f == CGRect(x: 447, y: 722, width: 618, height: 260))
+    }
+
+    @Test func windowFrameIsOpenRectPlusMarginWhenWider() {
+        let size = CGSize(width: 640, height: 268)
+        let o = wg.openRect(size: size)
+        #expect(frame(size) == CGRect(x: o.minX - 35, y: o.minY - 48, width: o.width + 70, height: o.height + 48))
     }
 }

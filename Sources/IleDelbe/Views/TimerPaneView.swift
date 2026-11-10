@@ -5,6 +5,8 @@ import SwiftUI
 struct TimerPaneView: View {
     var timer: CountdownTimer
     var now: Date
+    /// The three durations offered at rest, in minutes (from the settings).
+    var presetsMinutes: [Int] = AppSettings.default.timerPresetsMinutes
     var onStart: (TimeInterval) -> Void
     var onAddMinute: () -> Void
     var onPause: () -> Void
@@ -13,10 +15,9 @@ struct TimerPaneView: View {
     var onAcknowledge: () -> Void
 
     var body: some View {
-        switch timer.state {
+        switch timer.phase {
         case .idle: idle
-        case .running: active(paused: false)
-        case .paused: active(paused: true)
+        case let .active(paused): active(paused: paused)
         case .ringing: ringing
         }
     }
@@ -26,11 +27,7 @@ struct TimerPaneView: View {
             Text("Lancer un minuteur")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
-            HStack(spacing: 8) {
-                ForEach(CountdownTimer.presets, id: \.self) { preset in
-                    pill("\(Int(preset / 60)) min", highlighted: true) { onStart(preset) }
-                }
-            }
+            TimerPresetButtons(presetsMinutes: presetsMinutes, onStart: onStart)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(.leading, 6)
@@ -40,16 +37,14 @@ struct TimerPaneView: View {
         HStack(spacing: 20) {
             ZStack {
                 TimerRingView(progress: timer.progress(at: now), size: 104, lineWidth: 7)
-                Text(TimerText.string(timer.remaining(at: now)))
-                    .font(.system(size: 24, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(Color.timerOrange)
+                TimerRemainingText(timer: timer, now: now, size: 24)
             }
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
-                    pill("+1 min", highlighted: true, action: onAddMinute)
-                    pill(paused ? "Reprendre" : "Pause", highlighted: false, action: paused ? onResume : onPause)
+                    PillButton("+1 min", kind: .timer, action: onAddMinute)
+                    PillButton(paused ? "Reprendre" : "Pause", action: paused ? onResume : onPause)
                 }
-                pill("Arrêter", highlighted: false, action: onStop)
+                PillButton("Arrêter", action: onStop)
             }
             Spacer(minLength: 0)
         }
@@ -61,22 +56,9 @@ struct TimerPaneView: View {
             Text("Minuteur terminé")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(Color.timerOrange)
-            pill("OK", highlighted: true, action: onAcknowledge)
+            PillButton("OK", kind: .timer, action: onAcknowledge)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func pill(_ title: String, highlighted: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(highlighted ? Color.timerOrange : Color.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(Capsule().fill(highlighted ? Color.timerOrange.opacity(0.2) : Color.white.opacity(0.1)))
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
     }
 }
 
@@ -84,23 +66,10 @@ struct TimerPaneView: View {
 @MainActor private func previewPane(_ timer: CountdownTimer, now: Date = .now) -> some View {
     TimerPaneView(timer: timer, now: now, onStart: { _ in }, onAddMinute: {}, onPause: {},
                   onResume: {}, onStop: {}, onAcknowledge: {})
-        .padding(18).frame(width: 548, height: 160).background(Color.black)
+        .previewPanel(width: 548, height: 160)
 }
 
-#Preview("Timer idle") { previewPane(CountdownTimer()) }
-
-#Preview("Timer active") {
-    var t = CountdownTimer()
-    let now = Date.now
-    t.start(duration: 600, now: now)
-    return previewPane(t, now: now.addingTimeInterval(200))
-}
-
-#Preview("Timer ringing") {
-    var t = CountdownTimer()
-    let now = Date.now
-    t.start(duration: 60, now: now)
-    t.tick(now: now.addingTimeInterval(61))
-    return previewPane(t, now: now.addingTimeInterval(61))
-}
+#Preview("Timer idle") { previewPane(PreviewSamples.idleTimer) }
+#Preview("Timer active") { previewPane(PreviewSamples.runningTimer, now: PreviewSamples.runningNow) }
+#Preview("Timer ringing") { previewPane(PreviewSamples.ringingTimer, now: PreviewSamples.ringingNow) }
 #endif

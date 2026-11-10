@@ -1,5 +1,5 @@
 cask "iledelbe" do
-  version "0.2.0"
+  version "0.3.0"
   sha256 "REPLACE_WITH_SHA256_FROM_RELEASE_SH"
 
   url "https://github.com/jean-baptisteAZAN/ileDelbe/releases/download/v#{version}/ileDelbe-#{version}.zip"

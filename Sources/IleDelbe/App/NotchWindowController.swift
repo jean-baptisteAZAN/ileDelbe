@@ -9,15 +9,21 @@ final class NotchWindowController {
     private let model: NotchViewModel
     private let panel: NotchPanel
     private let log = Logger(subsystem: "io.github.ileDelbe", category: "window")
-    private var hover = HoverStateMachine()
+    private var hover: HoverStateMachine
     private var deadlineWork: DispatchWorkItem?
+    /// A window shrink deferred while open (`applyFrame(deferShrink:)`), applied after closing.
+    private var hasPendingShrink = false
+    private var settleWork: DispatchWorkItem?
     private var monitors: [Any] = []
     private var screenObserver: NSObjectProtocol?
     /// Whether the pointer was last seen inside the bubble rect while closed (open → Minuteur tab).
     private var pointerInBubble = false
+    /// Two-finger horizontal swipe → one Île page per gesture.
+    private var swipe = PageSwipe()
 
     init(model: NotchViewModel) {
         self.model = model
+        hover = HoverStateMachine(openDelay: model.settings.settings.openDelay)
         panel = NotchPanel(contentRect: .zero)
         let hosting = NSHostingView(rootView: NotchRootView(model: model))
         hosting.sizingOptions = []  // the window frame is ours, never the content's
@@ -51,7 +57,17 @@ final class NotchWindowController {
         }) {
             monitors.append(local)
         }
+        // Île page swipe. Local only: scroll events reach the panel only while it takes clicks,
+        // i.e. open and under the pointer. Never a global scroll monitor.
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] event in
+            MainActor.assumeIsolated { self?.handleScroll(event) }
+            return event
+        }) {
+            monitors.append(local)
+        }
         observeClosedLayout()
+        observeWindowSize()
+        observeOpenDelay()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
         ) { [weak self] _ in
@@ -64,7 +80,7 @@ final class NotchWindowController {
     private func layout() {
         guard let geometry = Self.notchGeometry() else {
             deadlineWork?.cancel()
-            hover = HoverStateMachine()
+            hover = HoverStateMachine(openDelay: model.settings.settings.openDelay)
             model.isOpen = false
             model.geometry = nil
             panel.ignoresMouseEvents = true
@@ -73,18 +89,63 @@ final class NotchWindowController {
             return
         }
         model.geometry = geometry
+        applyFrame()
+        panel.orderFrontRegardless()
+        log.info("notch \(NSStringFromRect(geometry.notch), privacy: .public)")
+        evaluateHover()
+    }
+
+    /// Frames the window on the largest open size of the current style, density and modules,
+    /// widened to cover every closed pill and bubble (`NotchGeometry.windowFrame`).
+    /// Only `setFrame`: never reorders the panel or takes focus, so it is safe while open.
+    /// `deferShrink`: while open the shape springs down to a smaller size (~0.35 s), so shrinking
+    /// the window at once would clip it. The window grows now and shrinks once the panel has
+    /// closed (`settleFrameAfterClose`). Hover and pass-through use `panelSize`, not this frame.
+    private func applyFrame(deferShrink: Bool = false) {
+        guard let geometry = model.geometry else { return }
         // Windows snap to whole points; grow outward to integral bounds so the content
         // (centered by NotchRootView) stays centered on the notch, e.g. odd notch widths.
-        let e = geometry.expanded
-        // The window extends past `expanded` only so the open halo is not cut by the window edge.
-        // That margin never takes clicks: see `updateMousePassThrough`.
+        // The window extends past the open panel so the open halo is not cut by the window edge,
+        // and covers every closed pill + bubble (title mode or the alert can be wider than a
+        // small open panel). That extra area never takes clicks: see `updateMousePassThrough`.
         let m = HaloStyle.windowMargin
-        let frame = CGRect(x: e.minX - m.horizontal, y: e.minY - m.bottom,
-                           width: e.width + 2 * m.horizontal, height: e.height + m.bottom)
-        panel.setFrame(NSIntegralRect(frame), display: true)
-        panel.orderFrontRegardless()
-        log.info("panel frame \(NSStringFromRect(self.panel.frame), privacy: .public) notch \(NSStringFromRect(geometry.notch), privacy: .public)")
-        evaluateHover()
+        var frame = NSIntegralRect(geometry.windowFrame(openSize: model.maxPanelSize,
+                                                        openMargin: (horizontal: m.horizontal, bottom: m.bottom),
+                                                        closedMargin: HaloStyle.closed.radius))
+        if deferShrink && model.isOpen {
+            let covering = frame.union(panel.frame)
+            hasPendingShrink = covering != frame
+            frame = covering
+        } else {
+            hasPendingShrink = false
+            settleWork?.cancel()
+            settleWork = nil
+        }
+        guard frame != panel.frame else { return }
+        panel.setFrame(frame, display: true)
+        log.info("panel frame \(NSStringFromRect(self.panel.frame), privacy: .public)")
+    }
+
+    /// Re-arms itself: style, density or module changes re-frame the window, even while open.
+    private func observeWindowSize() {
+        _ = withObservationTracking {
+            model.maxPanelSize
+        } onChange: { [weak self] in
+            Task { @MainActor in
+                self?.observeWindowSize()
+                self?.applyFrame(deferShrink: true)
+                self?.evaluateHover()
+            }
+        }
+    }
+
+    /// Re-arms itself: the hover open delay follows the setting.
+    private func observeOpenDelay() {
+        hover.openDelay = withObservationTracking {
+            model.settings.settings.openDelay
+        } onChange: { [weak self] in
+            Task { @MainActor in self?.observeOpenDelay() }
+        }
     }
 
     /// Built-in display first, else any screen with a notch.
@@ -104,10 +165,10 @@ final class NotchWindowController {
 
     // MARK: Hover
 
-    /// Re-arms itself on every change, so the trigger rect follows the bubble / alert width.
+    /// Re-arms itself on every change, so the trigger rect follows the bubble / wings width.
     private func observeClosedLayout() {
         _ = withObservationTracking {
-            model.closedLayout
+            (model.closedLayout, model.closedWings)
         } onChange: { [weak self] in
             Task { @MainActor in
                 self?.observeClosedLayout()
@@ -124,21 +185,18 @@ final class NotchWindowController {
 
     private func evaluateHover() {
         guard let geometry = model.geometry else { return }
-        let nowPlaying = model.nowPlaying
         let mouse = NSEvent.mouseLocation
         // Safety net: a drag session can swallow the mouse-up; a move with the button up ends it.
         if model.isDraggingFile, NSEvent.pressedMouseButtons & 1 == 0 { model.isDraggingFile = false }
+        // Always derived from the current state, so it follows the shape actually drawn.
+        let openRect = geometry.openRect(size: model.panelSize)
         var inTrigger: Bool
         if hover.isOpen {
-            inTrigger = Self.contains(geometry.expanded, mouse)
+            inTrigger = Self.contains(openRect, mouse)
         } else {
-            let layout = model.closedLayout
-            let main: CGRect = switch layout {
-            case .plain: geometry.notch
-            case .media, .mediaAndBubble, .timer: geometry.closedActive  // the visible pill
-            case .alert: geometry.closedAlert
-            }
-            let inBubble = layout == .mediaAndBubble && Self.contains(geometry.bubble, mouse)
+            let main = geometry.closedRect(model.closedWings)  // the visible pill (bare notch when plain)
+            let inBubble = model.closedLayout == .mediaAndBubble
+                && Self.contains(geometry.bubbleRect(after: main), mouse)
             inTrigger = Self.contains(main, mouse) || inBubble
             if inTrigger { pointerInBubble = inBubble }
         }
@@ -146,7 +204,7 @@ final class NotchWindowController {
         let now = ProcessInfo.processInfo.systemUptime
         hover.update(inTrigger: inTrigger, now: now)
         apply()
-        updateMousePassThrough(inExpanded: Self.contains(geometry.expanded, mouse))
+        updateMousePassThrough(inOpenPanel: Self.contains(openRect, mouse))
 
         deadlineWork?.cancel()
         deadlineWork = nil
@@ -160,19 +218,69 @@ final class NotchWindowController {
         }
     }
 
+    /// Feeds `PageSwipe` while the open Île shows its pages; a step moves one page.
+    private func handleScroll(_ event: NSEvent) {
+        guard hover.isOpen, model.isOpen, model.settings.settings.style == .island, !model.showsAll,
+              event.window === panel else { return }
+        let phase: PageSwipe.Phase
+        if event.phase.contains(.began) {
+            phase = .began
+        } else if event.phase.contains(.changed) {
+            phase = .changed
+        } else if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+            phase = .ended
+        } else if event.phase.isEmpty {
+            phase = .none  // mouse wheel, or momentum (filtered by `isMomentum`)
+        } else {
+            return  // .mayBegin, .stationary: no movement
+        }
+        if let step = swipe.feed(deltaX: event.scrollingDeltaX, deltaY: event.scrollingDeltaY, phase: phase,
+                                 isMomentum: !event.momentumPhase.isEmpty) {
+            model.step(step)
+        }
+    }
+
+    /// Closes the panel now (e.g. the gear was clicked). It reopens only after the pointer has
+    /// left the trigger and come back.
+    func closeNow() {
+        deadlineWork?.cancel()
+        deadlineWork = nil
+        hover.forceClose()
+        apply()
+        updateMousePassThrough(inOpenPanel: false)
+    }
+
     private func apply() {
         guard model.isOpen != hover.isOpen else { return }
         if hover.isOpen { model.panelWillOpen(fromBubble: pointerInBubble) }
         model.isOpen = hover.isOpen
-        if !hover.isOpen { model.panelDidClose() }
+        if !hover.isOpen {
+            model.panelDidClose()
+            settleFrameAfterClose()
+        }
+    }
+
+    /// Applies a shrink deferred while open, once the closing spring has run (the shape may
+    /// still be shrinking from a size larger than the new window). Skipped if it reopens.
+    private func settleFrameAfterClose() {
+        guard hasPendingShrink else { return }
+        settleWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated {
+                guard let self, !self.model.isOpen else { return }
+                self.applyFrame()
+            }
+        }
+        settleWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
     }
 
     /// Clicks reach the panel only while it is open and the pointer is over the panel itself
     /// (or a file drag is in progress). Closed (bubble included), and in the transparent glow
     /// margin around the open panel, clicks pass through to the menu bar and apps below.
     /// Updated on every mouse move.
-    private func updateMousePassThrough(inExpanded: Bool) {
-        let ignores = !((hover.isOpen && inExpanded) || model.isDraggingFile)
+    private func updateMousePassThrough(inOpenPanel: Bool) {
+        let ignores = !((hover.isOpen && inOpenPanel) || model.isDraggingFile)
         guard panel.ignoresMouseEvents != ignores else { return }
         panel.ignoresMouseEvents = ignores
         log.info("ignoresMouseEvents=\(ignores, privacy: .public)")
