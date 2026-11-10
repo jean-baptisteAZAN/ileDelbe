@@ -11,6 +11,11 @@ import Foundation
         #expect(s.closedStyle == .artworkEqualizer && s.density == .normal && s.forcedModule == nil)
         #expect(s.animateClosed)
     }
+    @Test func screenDefaultsAndFallback() {
+        #expect(AppSettings.default.screenMode == .builtIn && AppSettings.default.chosenScreenID == nil)
+        let s = AppSettings.load(Data(#"{"screenMode":"mirror","chosenScreenID":"C","style":"grid"}"#.utf8))
+        #expect(s.screenMode == .builtIn && s.chosenScreenID == "C" && s.style == .grid)
+    }
     @Test func roundTrip() {
         var s = AppSettings.default; s.style = .grid; s.fixedTint = .violet; s.accent = .fixed
         #expect(AppSettings.load(s.encoded()) == s)
