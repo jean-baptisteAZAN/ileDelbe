@@ -42,17 +42,17 @@ struct IslandStyleView<Page: View>: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             ZStack {
                 if modules.count > 1 { dots }
-                HStack(spacing: 6) {
+                HStack(spacing: IslandMetrics.buttonSpacing) {
                     Spacer(minLength: 0)
                     ShowAllButton(isOn: false, action: onShowAll)
                     SettingsButton(action: onSettings)
                 }
             }
-            .frame(height: 22)
+            .frame(height: IslandMetrics.rowHeight)
         }
         .padding(.top, 2)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 6)
+        .padding(.horizontal, IslandMetrics.horizontalInset)
+        .padding(.bottom, IslandMetrics.bottomInset)
         .onChange(of: selected) { _, new in
             let from = modules.firstIndex(of: displayed) ?? 0
             forward = (modules.firstIndex(of: new) ?? 0) >= from
@@ -70,9 +70,8 @@ struct IslandStyleView<Page: View>: View {
                     Capsule()
                         .fill(Color.white.opacity(on ? 0.9 : 0.28))
                         .frame(width: on ? 18 : 6, height: 6)
-                        // Generous hit area around a 6 pt dot.
-                        .frame(height: 22)
-                        .padding(.horizontal, 3)
+                        // Hit area of at least 20 × 22 pt around a 6 pt dot.
+                        .frame(minWidth: 20, minHeight: IslandMetrics.rowHeight)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -81,6 +80,24 @@ struct IslandStyleView<Page: View>: View {
             }
         }
         .animation(Self.pageSpring, value: selected)
+    }
+}
+
+/// Île control row geometry, shared with the « Tout voir » Grille so its return button sits
+/// on the very spot of the Île's « Tout voir » button: when the panel shrinks back to the
+/// pages, the pointer is still on that button, inside the Île.
+@MainActor enum IslandMetrics {
+    static let horizontalInset: CGFloat = 16
+    static let bottomInset: CGFloat = 6
+    static let rowHeight: CGFloat = 22
+    static let buttonSpacing: CGFloat = 6
+
+    /// Center of the « Tout voir » button, from the top center of the area below the notch band
+    /// (layout points, before the Compacte scale, which both styles share).
+    static var showAllCenter: CGPoint {
+        CGPoint(x: PanelSizing.islandWidth / 2 - horizontalInset - PanelIconButton.size - buttonSpacing
+                    - PanelIconButton.size / 2,
+                y: PanelSizing.islandContentHeight - bottomInset - rowHeight / 2)
     }
 }
 

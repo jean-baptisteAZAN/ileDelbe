@@ -3,6 +3,9 @@ import CoreGraphics
 /// Open-panel size per style, module set and density. Single source of truth for window geometry.
 public enum PanelSizing {
     public static let compactScale: CGFloat = 0.88
+    /// Île pages: width, and height below the notch band.
+    public static let islandWidth: CGFloat = 460
+    public static let islandContentHeight: CGFloat = 96
 
     public static func size(style: PanelStyle, showsAll: Bool, modules: [PanelTab],
                             density: PanelDensity, notchHeight h: CGFloat) -> CGSize {
@@ -14,7 +17,7 @@ public enum PanelSizing {
             case .tabs:
                 base = CGSize(width: 548, height: 236)
             case .island where !showsAll:
-                base = CGSize(width: 460, height: h + 96)
+                base = CGSize(width: islandWidth, height: h + islandContentHeight)
             case .grid, .island:
                 base = gridSize(modules: modules, h: h)
             }

@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Small round icon button of the panel chrome (the gear, « Tout voir »).
 struct PanelIconButton: View {
+    static let size: CGFloat = 22
+
     var systemName: String
     var help: String
     /// Highlighted (« Tout voir » while the grid is shown).
@@ -13,7 +15,7 @@ struct PanelIconButton: View {
             Image(systemName: systemName)
                 .font(.system(size: 10.5, weight: .semibold))
                 .foregroundStyle(isOn ? Color.white : Color.white.opacity(0.6))
-                .frame(width: 22, height: 22)
+                .frame(width: Self.size, height: Self.size)
                 .background(Circle().fill(Color.white.opacity(isOn ? 0.18 : 0.08)))
                 .contentShape(Circle())
         }
@@ -32,13 +34,15 @@ struct SettingsButton: View {
     }
 }
 
-/// « Tout voir »: switches the Île between its pages and the grid.
+/// « Tout voir »: switches the Île between its pages and the grid. The same button, at the
+/// same place on screen, brings the pages back (`isOn`).
 struct ShowAllButton: View {
     var isOn: Bool
     var action: () -> Void
 
     var body: some View {
-        PanelIconButton(systemName: "square.grid.2x2.fill", help: "Tout voir", isOn: isOn, action: action)
+        PanelIconButton(systemName: "square.grid.2x2.fill", help: isOn ? "Revenir aux pages" : "Tout voir",
+                        isOn: isOn, action: action)
     }
 }
 

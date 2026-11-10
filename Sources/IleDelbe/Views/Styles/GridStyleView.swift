@@ -7,7 +7,9 @@ import SwiftUI
 /// height comes from `PanelSizing`, the cards stretch to fill it.
 struct GridStyleView<Card: View>: View {
     var modules: [PanelTab]
-    /// Île « Tout voir »: the highlighted grid button next to the gear, back to the pages.
+    /// Île « Tout voir »: the highlighted grid button, back to the pages. It sits exactly where
+    /// the Île's « Tout voir » button is (`IslandMetrics.showAllCenter`), over the cards, so the
+    /// pointer stays inside the panel when it shrinks back to the Île.
     var onShowPages: (() -> Void)?
     var onSettings: () -> Void
     @ViewBuilder var card: (PanelTab) -> Card
@@ -20,7 +22,6 @@ struct GridStyleView<Card: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             HStack(spacing: 6) {
                 Spacer(minLength: 0)
-                if let onShowPages { ShowAllButton(isOn: true, action: onShowPages) }
                 SettingsButton(action: onSettings)
             }
             .frame(height: 20)
@@ -28,6 +29,15 @@ struct GridStyleView<Card: View>: View {
         .padding(.top, 6)
         .padding(.horizontal, 16)
         .padding(.bottom, 10)
+        .overlay(alignment: .top) {
+            if let onShowPages {
+                let c = IslandMetrics.showAllCenter
+                ShowAllButton(isOn: true, action: onShowPages)
+                    // Black ring: reads over a card.
+                    .background(Circle().fill(Color.black).padding(-3))
+                    .offset(x: c.x, y: c.y - PanelIconButton.size / 2)
+            }
+        }
     }
 
     @ViewBuilder
