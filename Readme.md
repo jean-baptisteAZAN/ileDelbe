@@ -23,12 +23,12 @@ ileDelbe is a small, native macOS agent app (SwiftUI, no Dock icon, no menu bar 
 - **Now Playing in the notch.** While something plays, the notch grows small wings: the artwork on the left, an animated equalizer on the right. It follows whatever macOS treats as "Now Playing": Spotify, Music, a YouTube tab, and so on.
 - **Three panel styles.** *Île* (the default), *Grille* and *Onglets*: pick the one you like in the settings. See [Styles](#styles).
 - **Settings window.** Accent color, halo, modules, closed notch, timer presets and more. See [Settings](#settings).
-- **Media panel.** Hover to open: artwork, title, artist, play/pause, previous, next, a seek bar, the system volume and your last 3 tracks.
+- **Media panel.** Hover to open: artwork, title, artist, play/pause, previous, next, a seek bar and the system volume. The Grille card and the Onglets tab (and « Tout voir » on Île) also list your last 3 tracks.
 - **Artwork-colored halo.** The average color of the current artwork tints a soft glow around the notch, the panel, and the seek bar. Grey or very dark artwork gives no glow.
-- **Timer.** One timer at a time (5, 10 or 25 min), with +1 min, pause and stop. When it ends, macOS plays the "Glass" sound and the notch turns orange until you look at it. It survives a relaunch.
+- **Timer.** One timer at a time, started from three presets (5, 10 and 25 min by default, configurable in the settings), with +1 min, pause and stop. When it ends, macOS plays the "Glass" sound and the notch turns orange until you look at it. It survives a relaunch.
 - **Timer bubble.** When a timer runs while music plays, the timer moves to a small bubble next to the notch, like two iPhone Live Activities.
 - **Agenda.** Your next 2 events in the next 24 hours from all your macOS calendars, with a **Rejoindre** (join) button for Google Meet, Zoom and Microsoft Teams links. An imminent event shows as "<title> dans N min" in the panel.
-- **Recent files.** Your 3 most recently used files, as in Finder's Recents. Click to open, or drag one out of the panel into another app.
+- **Recent files.** Your 3 or 5 most recently used files (configurable in the settings), as in Finder's Recents. Click to open, or drag one out of the panel into another app.
 
 ## Screenshots
 
@@ -85,19 +85,19 @@ ileDelbe asks for permissions only when a feature needs them.
 - **Files.** The **Fichiers** tab uses Spotlight. macOS may ask once for access to folders such as Desktop, Documents or Downloads when the app reads a recent file's icon or opens it.
 - **Music.** Now Playing needs no permission.
 
-To start ileDelbe at login, add it in System Settings > General > Login Items.
+To start ileDelbe at login, turn on **Lancer à l'ouverture de session** in the settings. macOS may ask you to approve it in System Settings > General > Login Items.
 
 ## Usage
 
 - **Hover the notch** to open the panel. Move the pointer away to close it.
 - **Modules.** *Musique*, *Minuteur*, *Agenda* and *Fichiers*, shown as pages (Île), cards (Grille) or tabs (Onglets). The panel opens on *Minuteur* if a timer rang and you have not seen it yet, else on *Musique* if something plays, else on the last tab you used.
 - **Timer bubble.** Hover the bubble to open the panel on *Minuteur*.
-- **Settings.** Click the gear, or right-click the notch and choose **Réglages…**.
+- **Settings.** Click the gear, or right-click inside the open panel and choose **Réglages…**.
 - **Quit.** Open the panel, right-click it and choose **Quitter**. From a terminal: `pkill -x IleDelbe`.
 
 ## Settings
 
-Open **Réglages ileDelbe** with the gear in the open panel, or right-click the notch and choose **Réglages…**. It is a regular window: it takes focus while it is open and hands it back when you close it.
+Open **Réglages ileDelbe** with the gear in the open panel, or right-click inside the open panel and choose **Réglages…**. It is a regular window: it takes focus while it is open and hands it back when you close it.
 
 <img src="docs/assets/settings.png" alt="The Réglages ileDelbe window" width="360">
 
