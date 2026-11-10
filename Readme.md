@@ -10,17 +10,19 @@ Now Playing controls, a timer, your next meetings and recent files, one hover aw
 [![macOS 15.4+](https://img.shields.io/badge/macOS-15.4%2B-black.svg?logo=apple)](#requirements)
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138.svg?logo=swift&logoColor=white)](Package.swift)
 
-<img src="docs/assets/hero.png" alt="The ileDelbe panel open under the notch, playing a track, with a pink halo" width="100%">
+<img src="docs/assets/hero.png" alt="The ileDelbe Île panel open under the notch, playing a track, with a pink halo" width="100%">
 
 </div>
 
 ileDelbe is a small, native macOS agent app (SwiftUI, no Dock icon, no menu bar item). It sits on the notch, grows when something happens, and opens into a panel when you hover it. It never steals focus, and clicks outside its shape go to the menu bar as usual.
 
-> The app's interface is in French for now (*Musique*, *Minuteur*, *Agenda*, *Fichiers*). This README is in English.
+> The app's interface is in French for now (*Musique*, *Minuteur*, *Agenda*, *Fichiers*, *Réglages*). This README is in English.
 
 ## Features
 
 - **Now Playing in the notch.** While something plays, the notch grows small wings: the artwork on the left, an animated equalizer on the right. It follows whatever macOS treats as "Now Playing": Spotify, Music, a YouTube tab, and so on.
+- **Three panel styles.** *Île* (the default), *Grille* and *Onglets*: pick the one you like in the settings. See [Styles](#styles).
+- **Settings window.** Accent color, halo, modules, closed notch, timer presets and more. See [Settings](#settings).
 - **Media panel.** Hover to open: artwork, title, artist, play/pause, previous, next, a seek bar, the system volume and your last 3 tracks.
 - **Artwork-colored halo.** The average color of the current artwork tints a soft glow around the notch, the panel, and the seek bar. Grey or very dark artwork gives no glow.
 - **Timer.** One timer at a time (5, 10 or 25 min), with +1 min, pause and stop. When it ends, macOS plays the "Glass" sound and the notch turns orange until you look at it. It survives a relaunch.
@@ -33,12 +35,24 @@ ileDelbe is a small, native macOS agent app (SwiftUI, no Dock icon, no menu bar 
 | Closed, music playing | Closed, music + timer bubble |
 | :---: | :---: |
 | <img src="docs/assets/closed-playing.png" alt="Closed notch with artwork and equalizer"> | <img src="docs/assets/closed-bubble.png" alt="Closed notch with a timer bubble on its right"> |
-| **Musique** | **Minuteur** |
-| <img src="docs/assets/open-music.png" alt="Music tab"> | <img src="docs/assets/open-timer.png" alt="Timer tab"> |
-| **Agenda** | **Fichiers** |
-| <img src="docs/assets/open-agenda.png" alt="Agenda tab with a join button"> | <img src="docs/assets/open-files.png" alt="Recent files tab"> |
 
-<sub>These images are rendered from the app's real SwiftUI views with made-up sample data (`make readme-assets`).</sub>
+<sub>These images are rendered from the app's real SwiftUI views with made-up sample data (`make readme-assets`). The settings image is a static redraw of the window, because the image renderer cannot draw native controls.</sub>
+
+## Styles
+
+The open panel comes in three styles. Choose one in the settings.
+
+**Île** (default). One compact module at a time, like a Dynamic Island. Pagination dots switch modules, **Tout voir** opens every module at once (the Grille layout) and the gear opens the settings.
+
+<img src="docs/assets/style-island.png" alt="Île style: the Musique page with pagination dots, a Tout voir button and a gear">
+
+**Grille.** All modules at once: *Musique* on the left, *Minuteur*, *Agenda* and *Fichiers* as cards on the right.
+
+<img src="docs/assets/style-grid.png" alt="Grille style: a Musique card and Minuteur, Agenda and Fichiers cards">
+
+**Onglets.** The 0.2 look: a tab bar over the full module pane.
+
+<img src="docs/assets/style-tabs.png" alt="Onglets style: a tab bar over the Musique pane">
 
 ## Install
 
@@ -76,9 +90,24 @@ To start ileDelbe at login, add it in System Settings > General > Login Items.
 ## Usage
 
 - **Hover the notch** to open the panel. Move the pointer away to close it.
-- **Tabs.** *Musique*, *Minuteur*, *Agenda* and *Fichiers*. The panel opens on *Minuteur* if a timer rang and you have not seen it yet, else on *Musique* if something plays, else on the last tab you used.
+- **Modules.** *Musique*, *Minuteur*, *Agenda* and *Fichiers*, shown as pages (Île), cards (Grille) or tabs (Onglets). The panel opens on *Minuteur* if a timer rang and you have not seen it yet, else on *Musique* if something plays, else on the last tab you used.
 - **Timer bubble.** Hover the bubble to open the panel on *Minuteur*.
+- **Settings.** Click the gear, or right-click the notch and choose **Réglages…**.
 - **Quit.** Open the panel, right-click it and choose **Quitter**. From a terminal: `pkill -x IleDelbe`.
+
+## Settings
+
+Open **Réglages ileDelbe** with the gear in the open panel, or right-click the notch and choose **Réglages…**. It is a regular window: it takes focus while it is open and hands it back when you close it.
+
+<img src="docs/assets/settings.png" alt="The Réglages ileDelbe window" width="360">
+
+- **Style.** *Île*, *Grille* or *Onglets*.
+- **Couleur.** The accent of the halo and seek bar: *Pochette* (from the artwork), *Fixe* (blue, green, violet, yellow or white) or *Aucune*. **Intensité du halo** sets the glow strength.
+- **Modules.** Show or hide *Musique*, *Minuteur*, *Agenda* and *Fichiers*, reorder them, and choose which one opens first (**À l'ouverture**, *Automatique* by default).
+- **Encoche fermée.** What the notch shows while music plays: *Pochette + égaliseur*, *Titre* or *Rien*. **Animer l'encoche fermée** turns the equalizer and the scrolling title on or off; with **Reduce Motion** enabled in System Settings > Accessibility > Display, they stay still whatever this option says. **Délai d'ouverture au survol** sets how long you hover before the panel opens.
+- **Minuteur.** The three preset durations (1 to 180 min).
+- **Panneau.** *Normale* or *Compacte* size, and 3 or 5 recent files.
+- **Lancer à l'ouverture de session.** Starts ileDelbe at login.
 
 ## Build from source
 

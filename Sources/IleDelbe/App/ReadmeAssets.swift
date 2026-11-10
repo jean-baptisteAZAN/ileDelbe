@@ -27,21 +27,22 @@ enum ReadmeAssets {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let s = Sample()
             let small = CGSize(width: 900, height: 120)
-            let panel = CGSize(width: 900, height: 330)
             let jobs: [(String, CGSize, Scene.Mode)] = [
                 ("closed-playing", small, .closed(.media)),
                 ("closed-bubble", small, .closed(.mediaAndBubble)),
-                ("open-music", panel, .open(.music)),
-                ("open-timer", panel, .open(.timer)),
-                ("open-agenda", panel, .open(.agenda)),
-                ("open-files", panel, .open(.files)),
-                ("hero", CGSize(width: 1200, height: 360), .open(.music)),
+                ("style-island", CGSize(width: 900, height: 200), .panel(.island)),
+                ("style-grid", CGSize(width: 900, height: 380), .panel(.grid)),
+                ("style-tabs", CGSize(width: 900, height: 300), .panel(.tabs)),
+                ("hero", CGSize(width: 1200, height: 260), .panel(.island)),
             ]
             for (name, size, mode) in jobs {
                 let url = directory.appendingPathComponent("\(name).png")
                 try write(Scene(mode: mode, canvas: size, sample: s), size: size, to: url)
                 print("wrote \(url.path)")
             }
+            let settings = directory.appendingPathComponent("settings.png")
+            try write(SettingsSnapshot(), size: SettingsSnapshot.size, to: settings)
+            print("wrote \(settings.path)")
             return 0
         } catch {
             FileHandle.standardError.write(Data("render-readme-assets: \(error)\n".utf8))
@@ -195,7 +196,7 @@ private struct Sample {
 /// Fake desktop + menu bar with the notch composed like `NotchRootView`, from plain values.
 @MainActor
 private struct Scene: View {
-    enum Mode { case closed(ClosedLayout), open(PanelTab) }
+    enum Mode { case closed(ClosedLayout), panel(PanelStyle) }
 
     var mode: Mode
     var canvas: CGSize
@@ -240,7 +241,7 @@ private struct Scene: View {
 
     private var state: (isOpen: Bool, layout: ClosedLayout) {
         switch mode {
-        case .open: (true, .mediaAndBubble)
+        case .panel: (true, .mediaAndBubble)
         case let .closed(layout): (false, layout)
         }
     }
@@ -248,7 +249,7 @@ private struct Scene: View {
     @ViewBuilder
     private func notch(_ g: NotchGeometry) -> some View {
         let (isOpen, layout) = state
-        let size: CGSize = isOpen ? g.openRect(size: CGSize(width: 548, height: 236)).size
+        let size: CGSize = isOpen ? g.openRect(size: panelSize(g)).size
             : layout == .plain ? g.notch.size
             : layout == .alert ? g.closedRect(.alert).size : g.closedRect(.standard).size
         let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
@@ -263,7 +264,7 @@ private struct Scene: View {
                 .clipShape(shape)
             if !isOpen && layout == .mediaAndBubble {
                 BubbleView(timer: sample.timer, now: sample.now)
-                    .offset(x: g.bubbleRect(after: g.closedRect(.standard)).midX - g.openRect(size: CGSize(width: 548, height: 236)).midX)
+                    .offset(x: g.bubbleRect(after: g.closedRect(.standard)).midX - g.openRect(size: panelSize(g)).midX)
             }
         }
         .frame(maxWidth: .infinity, alignment: .top)
@@ -271,16 +272,10 @@ private struct Scene: View {
 
     @ViewBuilder
     private func content(_ g: NotchGeometry, isOpen: Bool, layout: ClosedLayout) -> some View {
-        if case let .open(tab) = mode {
-            VStack(alignment: .leading, spacing: 12) {
-                TabBarView(tabs: PanelTab.allCases, selected: tab, timerActive: sample.timer.isActive, infoLine: sample.infoLine,
-                           onSelect: { _ in }, onSettings: {})
-                pane(tab)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .padding(.top, g.notch.height + 6)
-            .padding(.horizontal, 18)
-            .padding(.bottom, 14)
+        if case let .panel(style) = mode {
+            panelContent(style)
+                .frame(width: panelSize(g).width, height: panelSize(g).height - g.notch.height)
+                .padding(.top, g.notch.height)
         } else {
             ClosedActivityView(layout: layout, wings: PanelRules.closedWings(layout, closedStyle: .artworkEqualizer),
                                artworkData: sample.info.artworkData, isPlaying: true,
@@ -289,21 +284,177 @@ private struct Scene: View {
         }
     }
 
+    private var panelStyle: PanelStyle {
+        if case let .panel(style) = mode { style } else { .island }
+    }
+
+    private func panelSize(_ g: NotchGeometry) -> CGSize {
+        PanelSizing.size(style: panelStyle, showsAll: false, modules: PanelTab.allCases,
+                         density: .normal, notchHeight: g.notch.height)
+    }
+
     @ViewBuilder
-    private func pane(_ tab: PanelTab) -> some View {
-        switch tab {
+    private func panelContent(_ style: PanelStyle) -> some View {
+        switch style {
+        case .island:
+            IslandStyleView(modules: PanelTab.allCases, selected: .music, onSelect: { _ in },
+                            onShowAll: {}, onSettings: {}) { module in
+                compact(module)
+            }
+        case .grid:
+            GridStyleView(modules: PanelTab.allCases, onShowPages: nil, onSettings: {}) { module in
+                card(module)
+            }
+        case .tabs:
+            VStack(alignment: .leading, spacing: 12) {
+                TabBarView(tabs: PanelTab.allCases, selected: .music, timerActive: sample.timer.isActive,
+                           infoLine: sample.infoLine, onSelect: { _ in }, onSettings: {})
+                MusicPaneView(info: sample.info, history: sample.history, glow: sample.glow, volume: 0.6,
+                              isVolumeSettable: true, onCommand: { _ in }, onVolume: { _ in })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            }
+            .padding(.top, 6)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 14)
+        }
+    }
+
+    @ViewBuilder
+    private func compact(_ module: PanelTab) -> some View {
+        switch module {
         case .music:
-            MusicPaneView(info: sample.info, history: sample.history, glow: sample.glow, volume: 0.6,
+            MusicCompactView(info: sample.info, glow: sample.glow, onCommand: { _ in })
+        case .timer:
+            TimerCompactView(timer: sample.timer, now: sample.now, onStart: { _ in }, onAddMinute: {},
+                             onPause: {}, onResume: {}, onStop: {}, onAcknowledge: {})
+        case .agenda:
+            AgendaCompactView(access: .granted, events: sample.events, now: sample.now, onAppear: {},
+                              onJoin: { _ in }, onOpenSettings: {})
+        case .files:
+            FilesCompactView(files: sample.files, icon: { sample.icon($0) }, now: sample.now,
+                             onOpen: { _ in }, onDragStart: {})
+        }
+    }
+
+    @ViewBuilder
+    private func card(_ module: PanelTab) -> some View {
+        switch module {
+        case .music:
+            MusicCardView(info: sample.info, history: sample.history, glow: sample.glow, volume: 0.6,
                           isVolumeSettable: true, onCommand: { _ in }, onVolume: { _ in })
         case .timer:
-            TimerPaneView(timer: sample.timer, now: sample.now, onStart: { _ in }, onAddMinute: {},
+            TimerCardView(timer: sample.timer, now: sample.now, onStart: { _ in }, onAddMinute: {},
                           onPause: {}, onResume: {}, onStop: {}, onAcknowledge: {})
         case .agenda:
-            AgendaPaneView(access: .granted, events: sample.events, now: sample.now, onAppear: {},
+            AgendaCardView(access: .granted, events: sample.events, now: sample.now, onAppear: {},
                            onJoin: { _ in }, onOpenSettings: {})
         case .files:
-            FilesPaneView(files: sample.files, home: sample.home, icon: { sample.icon($0) }, now: sample.now,
-                          onOpen: { _ in }, onDragStart: {})
+            FilesCardView(files: sample.files, icon: { sample.icon($0) }, onOpen: { _ in }, onDragStart: {})
+        }
+    }
+}
+
+// MARK: - Settings window
+
+/// Static look-alike of `SettingsView` with the default settings. `ImageRenderer` cannot draw the
+/// AppKit-backed Form, pickers, toggles and sliders (the real view renders blank), so this redraws
+/// the same rows with the same French labels, in the dark grouped style.
+@MainActor
+private struct SettingsSnapshot: View {
+    static let size = CGSize(width: 520, height: 620)
+    private let s = AppSettings.default
+    private let blue = Color(red: 0.04, green: 0.52, blue: 1)
+
+    var body: some View {
+        VStack(spacing: 14) {
+            group {
+                segmented("Style", ["Île", "Grille", "Onglets"], selected: s.style == .island ? 0 : 1)
+                segmented("Couleur", ["Pochette", "Fixe", "Aucune"], selected: 0)
+                row("Intensité du halo") { slider(s.haloIntensity, text: "\(Int((s.haloIntensity * 100).rounded())) %") }
+            }
+            header("Modules")
+            group {
+                ForEach(s.modules, id: \.module) { entry in
+                    row(entry.module.title, leading: AnyView(toggle(entry.visible))) {
+                        HStack(spacing: 14) {
+                            Image(systemName: "chevron.up"); Image(systemName: "chevron.down")
+                        }.foregroundStyle(.secondary)
+                    }
+                }
+                row("À l'ouverture") { menu("Automatique") }
+            }
+            group {
+                row("Encoche fermée pendant la lecture") { menu("Pochette + égaliseur") }
+                row("Animer l'encoche fermée", leading: nil) { toggle(s.animateClosed) }
+                row("Délai d'ouverture au survol") { slider((s.openDelay - 0.05) / 0.55, text: SettingsView.delayText(s.openDelay)) }
+            }
+            group {
+                row("Durées du minuteur") {
+                    HStack(spacing: 10) {
+                        ForEach(0..<3, id: \.self) { Text("\(s.timerPresetsMinutes[$0]) min").monospacedDigit() }
+                    }
+                }
+                segmented("Taille du panneau", ["Normale", "Compacte"], selected: 0)
+                segmented("Fichiers récents", ["3", "5"], selected: 0)
+            }
+            group { row("Lancer à l'ouverture de session") { toggle(false) } }
+            Spacer(minLength: 0)
+        }
+        .font(.system(size: 13))
+        .foregroundStyle(.white)
+        .padding(20)
+        .frame(width: Self.size.width, height: Self.size.height, alignment: .top)
+        .background(Color(red: 0.16, green: 0.16, blue: 0.17))
+    }
+
+    private func header(_ t: String) -> some View {
+        Text(t).font(.system(size: 13, weight: .semibold)).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.leading, 10).padding(.bottom, -8)
+    }
+
+    private func group<C: View>(@ViewBuilder _ c: () -> C) -> some View {
+        VStack(spacing: 0) { c() }
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.07)))
+    }
+
+    private func row<T: View>(_ title: String, leading: AnyView? = nil, @ViewBuilder _ trailing: () -> T) -> some View {
+        HStack(spacing: 10) {
+            if let leading { leading }
+            Text(title)
+            Spacer(minLength: 8)
+            trailing()
+        }
+        .padding(.horizontal, 12).frame(height: 34)
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.white.opacity(0.08)).frame(height: 1).padding(.leading, 12) }
+    }
+
+    private func segmented(_ title: String, _ items: [String], selected: Int) -> some View {
+        row(title) {
+            HStack(spacing: 0) {
+                ForEach(items.indices, id: \.self) { i in
+                    Text(items[i]).padding(.horizontal, 12).padding(.vertical, 3)
+                        .background(RoundedRectangle(cornerRadius: 5).fill(i == selected ? Color.white.opacity(0.22) : .clear))
+                }
+            }
+            .padding(2).background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(0.08)))
+        }
+    }
+
+    private func menu(_ t: String) -> some View {
+        HStack(spacing: 6) { Text(t); Image(systemName: "chevron.up.chevron.down").font(.system(size: 10)) }
+            .padding(.horizontal, 10).padding(.vertical, 3)
+            .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.1)))
+    }
+
+    private func toggle(_ on: Bool) -> some View {
+        Capsule().fill(on ? blue : Color.white.opacity(0.2)).frame(width: 36, height: 21)
+            .overlay(alignment: on ? .trailing : .leading) { Circle().fill(.white).padding(2) }
+    }
+
+    private func slider(_ f: Double, text: String) -> some View {
+        HStack {
+            SnapshotSlider(fraction: f, tint: blue).frame(width: 160)
+            Text(text).monospacedDigit().frame(width: 48, alignment: .trailing)
         }
     }
 }
