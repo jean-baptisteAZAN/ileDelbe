@@ -7,8 +7,6 @@ struct AgendaCompactView: View {
     var access: CalendarService.Access
     var events: [AgendaEvent]
     var now: Date
-    /// Countdown color. nil = white.
-    var accent: Color?
     var onAppear: () -> Void
     var onJoin: (URL) -> Void
     var onOpenSettings: () -> Void
@@ -47,7 +45,7 @@ struct AgendaCompactView: View {
         return VStack(spacing: 1) {
             Text(soon ? "\(minutes)" : ClockText.string(from: event.start))
                 .font(.system(size: soon ? 24 : 19, weight: .bold).monospacedDigit())
-                .foregroundStyle(accent ?? event.displayColor)
+                .foregroundStyle(event.displayColor)
             Text(soon ? "min" : AgendaText.relative(event, now: now))
                 .font(.system(size: 11)).foregroundStyle(.secondary)
         }
@@ -58,7 +56,7 @@ struct AgendaCompactView: View {
 
 #if DEBUG
 @MainActor private func agendaCompactPreview(_ access: CalendarService.Access, _ events: [AgendaEvent]) -> some View {
-    AgendaCompactView(access: access, events: events, now: .now, accent: PreviewSamples.glow, onAppear: {},
+    AgendaCompactView(access: access, events: events, now: .now, onAppear: {},
                       onJoin: { _ in }, onOpenSettings: {})
         .previewCompactRow()
 }

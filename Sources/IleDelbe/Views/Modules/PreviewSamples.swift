@@ -75,6 +75,43 @@ enum PreviewSamples {
     static func icon(_ file: RecentFile) -> NSImage {
         NSWorkspace.shared.icon(for: UTType(filenameExtension: file.url.pathExtension) ?? .data)
     }
+
+    /// A module at the Île size, with sample data (style previews).
+    @ViewBuilder
+    static func compactPage(_ module: PanelTab, timer: CountdownTimer = runningTimer,
+                            now: Date = runningNow) -> some View {
+        switch module {
+        case .music:
+            MusicCompactView(info: nowPlaying, glow: glow, onCommand: { _ in })
+        case .timer:
+            TimerCompactView(timer: timer, now: now, onStart: { _ in }, onAddMinute: {}, onPause: {}, onResume: {},
+                             onStop: {}, onAcknowledge: {})
+        case .agenda:
+            AgendaCompactView(access: .granted, events: events, now: .now, onAppear: {}, onJoin: { _ in },
+                              onOpenSettings: {})
+        case .files:
+            FilesCompactView(files: files, count: 5, icon: { icon($0) }, now: .now, onOpen: { _ in },
+                             onDragStart: {})
+        }
+    }
+
+    /// A module at the Grille size, with sample data (style previews).
+    @ViewBuilder
+    static func card(_ module: PanelTab) -> some View {
+        switch module {
+        case .music:
+            MusicCardView(info: nowPlaying, history: history, glow: glow, volume: 0.6, isVolumeSettable: true,
+                          onCommand: { _ in }, onVolume: { _ in })
+        case .timer:
+            TimerCardView(timer: runningTimer, now: runningNow, onStart: { _ in }, onAddMinute: {}, onPause: {},
+                          onResume: {}, onStop: {}, onAcknowledge: {})
+        case .agenda:
+            AgendaCardView(access: .granted, events: events, now: .now, onAppear: {}, onJoin: { _ in },
+                           onOpenSettings: {})
+        case .files:
+            FilesCardView(files: files, count: 5, icon: { icon($0) }, onOpen: { _ in }, onDragStart: {})
+        }
+    }
 }
 
 extension View {

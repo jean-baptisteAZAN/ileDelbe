@@ -72,10 +72,10 @@ struct ModuleView: View {
         let onOpenSettings = { calendar.openPrivacySettings() }
         switch size {
         case .compact:
-            AgendaCompactView(access: calendar.access, events: calendar.upcoming, now: Date(), accent: model.accent,
+            AgendaCompactView(access: calendar.access, events: calendar.upcoming, now: Date(),
                               onAppear: onAppear, onJoin: onJoin, onOpenSettings: onOpenSettings)
         case .card:
-            AgendaCardView(access: calendar.access, events: calendar.upcoming, now: Date(), accent: model.accent,
+            AgendaCardView(access: calendar.access, events: calendar.upcoming, now: Date(),
                            onAppear: onAppear, onJoin: onJoin, onOpenSettings: onOpenSettings)
         case .full:
             AgendaPaneView(access: calendar.access, events: calendar.upcoming, now: Date(),

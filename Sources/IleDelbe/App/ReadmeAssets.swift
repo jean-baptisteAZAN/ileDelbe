@@ -274,7 +274,7 @@ private struct Scene: View {
         if case let .open(tab) = mode {
             VStack(alignment: .leading, spacing: 12) {
                 TabBarView(tabs: PanelTab.allCases, selected: tab, timerActive: sample.timer.isActive, infoLine: sample.infoLine,
-                           onSelect: { _ in })
+                           onSelect: { _ in }, onSettings: {})
                 pane(tab)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }

@@ -17,10 +17,11 @@ struct FilesCardView: View {
             if files.isEmpty {
                 ModuleEmptyText("Aucun fichier récent", size: 12.5)
             } else {
+                // Items shrink below 44 pt in a narrow card (two-column Grille with five files).
                 HStack(alignment: .top, spacing: 4) {
                     ForEach(files.prefix(count)) { item($0) }
-                    Spacer(minLength: 0)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -34,7 +35,7 @@ struct FilesCardView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
-        .frame(width: 44)
+        .frame(maxWidth: 44)
         .recentFileInteractions(file, onOpen: onOpen, onDragStart: onDragStart)
     }
 }

@@ -1,22 +1,14 @@
 import IleDelbeCore
 import SwiftUI
 
-/// Segmented pill of the visible modules, in settings order, + right-aligned info line.
+/// Segmented pill of the visible modules, in settings order, + right-aligned info line and the gear.
 struct TabBarView: View {
     var tabs: [PanelTab]
     var selected: PanelTab?
     var timerActive: Bool
     var infoLine: String?
     var onSelect: (PanelTab) -> Void
-
-    private static func title(_ tab: PanelTab) -> String {
-        switch tab {
-        case .music: "Musique"
-        case .timer: "Minuteur"
-        case .agenda: "Agenda"
-        case .files: "Fichiers"
-        }
-    }
+    var onSettings: () -> Void
 
     var body: some View {
         HStack {
@@ -24,7 +16,7 @@ struct TabBarView: View {
                 ForEach(tabs, id: \.self) { tab in
                     Button { onSelect(tab) } label: {
                         HStack(spacing: 6) {
-                            Text(Self.title(tab))
+                            Text(tab.title)
                             if tab == .timer && timerActive {
                                 Circle().fill(Color.timerOrange).frame(width: 6, height: 6)
                             }
@@ -48,7 +40,7 @@ struct TabBarView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            // The settings gear goes here, right of the bar (later task).
+            SettingsButton(action: onSettings)
         }
     }
 }
@@ -57,8 +49,9 @@ struct TabBarView: View {
 #Preview("Tab bar") {
     VStack(spacing: 12) {
         TabBarView(tabs: PanelTab.allCases, selected: .music, timerActive: true, infoLine: "Standup dans 12 min",
-                   onSelect: { _ in })
-        TabBarView(tabs: [.agenda, .files], selected: .agenda, timerActive: false, infoLine: nil, onSelect: { _ in })
+                   onSelect: { _ in }, onSettings: {})
+        TabBarView(tabs: [.agenda, .files], selected: .agenda, timerActive: false, infoLine: nil, onSelect: { _ in },
+                   onSettings: {})
     }
     .padding(18).frame(width: 548).background(Color.black)
 }

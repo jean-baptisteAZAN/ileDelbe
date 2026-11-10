@@ -33,12 +33,22 @@ public enum PanelSizing {
         return CGSize(width: max(own.width, grid.width), height: max(own.height, grid.height))
     }
 
+    /// Grille (and « Tout voir ») heights below the notch band, constants per case:
+    /// 6 pt top inset, the cards, an 8 + 20 pt footer row with the gear, 10 pt bottom inset.
+    public static let gridChrome: CGFloat = 44
+    /// With Musique: the side column stacks up to 3 cards (Minuteur ~64, Agenda without
+    /// access ~86, five files ~79) and 2 gaps of 10 pt; the Musique card needs ~191.
+    public static let gridMusicContent: CGFloat = 250
+    /// Without Musique: rows of 2 cards, the tallest card (Agenda without access) included.
+    public static let gridRowHeight: CGFloat = 86
+    public static let gridRowSpacing: CGFloat = 10
+
     private static func gridSize(modules: [PanelTab], h: CGFloat) -> CGSize {
         if modules.contains(.music) {
             let width: CGFloat = modules.count > 1 ? 640 : 380
-            return CGSize(width: width, height: h + 236)
+            return CGSize(width: width, height: h + gridChrome + gridMusicContent)
         }
         let n = CGFloat((modules.count + 1) / 2)
-        return CGSize(width: 520, height: h + 32 + n * 96 + (n - 1) * 10)
+        return CGSize(width: 520, height: h + gridChrome + n * gridRowHeight + (n - 1) * gridRowSpacing)
     }
 }

@@ -1,14 +1,12 @@
 import IleDelbeCore
 import SwiftUI
 
-/// Grille card: the next event with its countdown in the title, and « Rejoindre ».
+/// Grille card: the next event with its countdown (calendar colour) in the title, and « Rejoindre ».
 /// Same access states and `onAppear` request as the pane.
 struct AgendaCardView: View {
     var access: CalendarService.Access
     var events: [AgendaEvent]
     var now: Date
-    /// Countdown color in the title. nil = white.
-    var accent: Color?
     var onAppear: () -> Void
     var onJoin: (URL) -> Void
     var onOpenSettings: () -> Void
@@ -17,7 +15,7 @@ struct AgendaCardView: View {
         ModuleCard {
             ModuleLabel {
                 if access == .granted, let next = events.first {
-                    Text("Agenda · \(Text(AgendaText.relative(next, now: now)).foregroundStyle(accent ?? .white))")
+                    Text("Agenda · \(Text(AgendaText.relative(next, now: now)).foregroundStyle(next.displayColor))")
                 } else {
                     Text("Agenda")
                 }
@@ -50,7 +48,7 @@ struct AgendaCardView: View {
 
 #if DEBUG
 @MainActor private func agendaCardPreview(_ access: CalendarService.Access, _ events: [AgendaEvent]) -> some View {
-    AgendaCardView(access: access, events: events, now: .now, accent: PreviewSamples.glow, onAppear: {},
+    AgendaCardView(access: access, events: events, now: .now, onAppear: {},
                    onJoin: { _ in }, onOpenSettings: {})
         .previewCard(width: 260, height: 64)
 }

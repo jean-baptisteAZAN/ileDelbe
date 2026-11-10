@@ -87,27 +87,14 @@ struct NotchRootView: View {
     @ViewBuilder
     private func content(geometry g: NotchGeometry, layout: ClosedLayout) -> some View {
         if model.isOpen {
-            // Every style renders the Onglets content for now; only the size follows the style.
-            VStack(alignment: .leading, spacing: 12) {
-                if let tab = model.shownTab {
-                    TabBarView(tabs: model.modules, selected: tab, timerActive: model.timer.timer.isActive,
-                               infoLine: model.settings.settings.visibleModules.contains(.agenda)
-                                   ? model.calendar.infoLine : nil,
-                               onSelect: { model.select($0) })
-                    ModuleView(module: tab, size: .full, model: model)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                } else {
-                    Text("Aucun module affiché")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            // Clear the hardware notch band at the top, then pad the rest.
-            .padding(.top, g.notch.height + 6)
-            .padding(.horizontal, 18)
-            .padding(.bottom, 14)
-            .transition(.opacity)
+            // Laid out at the Normale size below the hardware notch band, then scaled for
+            // Compacte: the band itself never shrinks (`PanelSizing`).
+            let base = model.unscaledPanelSize
+            PanelContentView(model: model)
+                .frame(width: base.width, height: base.height - g.notch.height)
+                .scaleEffect(model.contentScale, anchor: .top)
+                .padding(.top, g.notch.height)
+                .transition(.opacity)
         } else if layout != .plain {
             ClosedActivityView(layout: layout, wings: model.closedWings,
                                artworkData: model.nowPlaying.info?.artworkData,

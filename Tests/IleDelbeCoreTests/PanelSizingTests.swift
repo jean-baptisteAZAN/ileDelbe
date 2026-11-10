@@ -10,11 +10,11 @@ import CoreGraphics
     @Test func tabs() { #expect(size(.tabs, all) == CGSize(width: 548, height: 236)) }
     @Test func island() { #expect(size(.island, all) == CGSize(width: 460, height: 128)) }
     @Test func islandShowsAllIsGrid() { #expect(size(.island, all, all: true) == size(.grid, all)) }
-    @Test func gridWithMusic() { #expect(size(.grid, all) == CGSize(width: 640, height: 268)) }
-    @Test func gridMusicOnly() { #expect(size(.grid, [.music]) == CGSize(width: 380, height: 268)) }
+    @Test func gridWithMusic() { #expect(size(.grid, all) == CGSize(width: 640, height: 326)) }
+    @Test func gridMusicOnly() { #expect(size(.grid, [.music]) == CGSize(width: 380, height: 326)) }
     @Test func gridNoMusic() {
-        #expect(size(.grid, [.timer]) == CGSize(width: 520, height: 160))
-        #expect(size(.grid, [.timer, .agenda, .files]) == CGSize(width: 520, height: 266))
+        #expect(size(.grid, [.timer]) == CGSize(width: 520, height: 162))
+        #expect(size(.grid, [.timer, .agenda, .files]) == CGSize(width: 520, height: 258))
     }
     @Test func emptySize() {
         for s in PanelStyle.allCases { #expect(size(s, []) == CGSize(width: 300, height: 112)) }
@@ -25,7 +25,7 @@ import CoreGraphics
     }
     @Test func maxSizeIslandCoversShowsAll() {
         let m = PanelSizing.maxSize(style: .island, modules: all, density: .normal, notchHeight: 32)
-        #expect(m == CGSize(width: 640, height: 268))
+        #expect(m == CGSize(width: 640, height: 326))
     }
     @Test func windowFrameCoversEveryStateOfStyle() {
         let subsets: [[PanelTab]] = [[], [.music], [.timer], [.music, .timer, .agenda, .files], [.timer, .agenda, .files]]

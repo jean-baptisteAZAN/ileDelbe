@@ -86,6 +86,16 @@ final class NotchViewModel {
                                 notchHeight: notchHeight)
     }
 
+    /// The open panel at the Normale size: the content is laid out on it, then scaled by
+    /// `contentScale` (the notch band excluded), so Compacte is the same layout, smaller.
+    var unscaledPanelSize: CGSize {
+        let s = settings.settings
+        return PanelSizing.size(style: s.style, showsAll: showsAll, modules: modules, density: .normal,
+                                notchHeight: notchHeight)
+    }
+
+    var contentScale: CGFloat { settings.settings.density == .compact ? PanelSizing.compactScale : 1 }
+
     /// Largest open size of the current style, density and modules: the window is framed on it
     /// so switching pages or « Tout voir » never resizes the window.
     var maxPanelSize: CGSize {

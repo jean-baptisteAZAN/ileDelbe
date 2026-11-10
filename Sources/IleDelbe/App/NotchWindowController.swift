@@ -15,6 +15,8 @@ final class NotchWindowController {
     private var screenObserver: NSObjectProtocol?
     /// Whether the pointer was last seen inside the bubble rect while closed (open → Minuteur tab).
     private var pointerInBubble = false
+    /// Two-finger horizontal swipe → one Île page per gesture.
+    private var swipe = PageSwipe()
 
     init(model: NotchViewModel) {
         self.model = model
@@ -48,6 +50,14 @@ final class NotchWindowController {
         }
         if let local = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp, handler: { event in
             mouseUp(event)
+            return event
+        }) {
+            monitors.append(local)
+        }
+        // Île page swipe. Local only: scroll events reach the panel only while it takes clicks,
+        // i.e. open and under the pointer. Never a global scroll monitor.
+        if let local = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel, handler: { [weak self] event in
+            MainActor.assumeIsolated { self?.handleScroll(event) }
             return event
         }) {
             monitors.append(local)
@@ -190,6 +200,28 @@ final class NotchWindowController {
             deadlineWork = work
             // +0.01 s absorbs float rounding in the state machine (no zero-delay reschedule loop).
             DispatchQueue.main.asyncAfter(deadline: .now() + max(0, deadline + 0.01 - now), execute: work)
+        }
+    }
+
+    /// Feeds `PageSwipe` while the open Île shows its pages; a step moves one page.
+    private func handleScroll(_ event: NSEvent) {
+        guard hover.isOpen, model.isOpen, model.settings.settings.style == .island, !model.showsAll,
+              event.window === panel else { return }
+        let phase: PageSwipe.Phase
+        if event.phase.contains(.began) {
+            phase = .began
+        } else if event.phase.contains(.changed) {
+            phase = .changed
+        } else if event.phase.contains(.ended) || event.phase.contains(.cancelled) {
+            phase = .ended
+        } else if event.phase.isEmpty {
+            phase = .none  // mouse wheel, or momentum (filtered by `isMomentum`)
+        } else {
+            return  // .mayBegin, .stationary: no movement
+        }
+        if let step = swipe.feed(deltaX: event.scrollingDeltaX, deltaY: event.scrollingDeltaY, phase: phase,
+                                 isMomentum: !event.momentumPhase.isEmpty) {
+            model.step(step)
         }
     }
 
