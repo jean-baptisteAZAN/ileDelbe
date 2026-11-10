@@ -27,6 +27,10 @@ struct NotchRootView: View {
             let wings = model.closedWings
             let isOpen = model.isOpen
             let size = isOpen ? model.panelSize : geometry.closedRect(wings).size
+            // Asymmetric wings (title mode): shift the closed pill so it is drawn exactly on
+            // `closedRect(wings)`, the hover rect, with the hardware notch staying in place.
+            // Animates with the size under the same spring.
+            let offsetX = isOpen ? 0 : geometry.closedOffsetX(wings)
             let shape = NotchShape(bottomRadius: isOpen ? NotchShape.openRadius : NotchShape.closedRadius)
             ZStack(alignment: .top) {
                 // Halo: an un-clipped copy of the shape carries the shadow, so the `.clipShape`
@@ -37,6 +41,7 @@ struct NotchRootView: View {
                     .shadow(color: haloColor(layout: layout, isOpen: isOpen),
                             radius: isOpen ? HaloStyle.open.radius : HaloStyle.closed.radius,
                             y: isOpen ? HaloStyle.open.y : HaloStyle.closed.y)
+                    .offset(x: offsetX)
                 shape
                     .fill(Color.black)
                     .overlay(alignment: .top) {
@@ -45,6 +50,7 @@ struct NotchRootView: View {
                     .frame(width: size.width, height: size.height)
                     // Keep content inside the black shape while it shrinks/grows.
                     .clipShape(shape)
+                    .offset(x: offsetX)
                     .contextMenu {
                         Button("Quitter") { NSApp.terminate(nil) }
                     }

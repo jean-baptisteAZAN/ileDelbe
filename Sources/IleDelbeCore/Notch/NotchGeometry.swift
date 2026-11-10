@@ -34,6 +34,12 @@ public struct NotchGeometry: Equatable, Sendable {
                width: notch.width + wings.left + wings.right, height: notch.height)
     }
 
+    /// Horizontal shift of the closed pill's center from the notch center, for content that is
+    /// laid out centered on the notch: drawn with it, the pill coincides with `closedRect(wings)`.
+    public func closedOffsetX(_ wings: ClosedWings) -> CGFloat {
+        closedRect(wings).midX - notch.midX
+    }
+
     public func openRect(size: CGSize) -> CGRect {
         CGRect(x: notch.midX - size.width / 2, y: screenMaxY - size.height,
                width: size.width, height: size.height)

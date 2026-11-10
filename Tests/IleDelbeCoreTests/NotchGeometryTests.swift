@@ -48,4 +48,14 @@ import Testing
         #expect(NotchGeometry.make(screenFrame: screen, safeAreaTop: 0,
                                    auxiliaryTopLeft: right, auxiliaryTopRight: right) == nil)
     }
+
+    @Test func closedOffsetFollowsAsymmetricWings() {
+        let g = NotchGeometry(notch: CGRect(x: 662, y: 950, width: 188, height: 32), screenMaxY: 982)
+        #expect(g.closedOffsetX(.title) == 42)
+        #expect(g.closedOffsetX(.standard) == 0)
+        #expect(g.closedOffsetX(.none) == 0)
+        #expect(g.closedOffsetX(.alert) == 0)
+        // The offset shape coincides with closedRect.
+        #expect(g.notch.midX + g.closedOffsetX(.title) == g.closedRect(.title).midX)
+    }
 }
